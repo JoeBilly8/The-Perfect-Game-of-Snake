@@ -3,7 +3,7 @@
 # 1) Back Button for menus
 # 2) Options Menu
 # 3) Unit Tests
-# 4) Implement Simple Hamiltonian
+# 4) Implement A* Searching algorithm
 # 5) Implement Perturbated Hamiltonian
 
 #-----------------------IMPORTS-----------------------#
