@@ -32,6 +32,9 @@
 #         add the child to the openList
 
 
+from snake import SNAKE_SPEED
+
+
 class a_star_node:
     def __init__(self, position, parent=None):
         self.g = 0
@@ -44,10 +47,10 @@ class a_star_node:
         return self.position == other.position
 
 
-def a_star_path(start, end, grid_columns, grid_rows, snake_positions):
+def a_star_path(start, target, grid_columns, grid_rows, snake_positions):
     # Create a start node and a target node the specified node in the grid
     start_node = a_star_node(start)
-    target = a_star_node(end)
+    target = a_star_node(target)
 
     # Initialize the node open and closed list, add start_node to open list to begin with
     node_open_list = [start_node]
@@ -118,3 +121,17 @@ def a_star_path(start, end, grid_columns, grid_rows, snake_positions):
 
             # Otherwise add the child to the node open list
             node_open_list.append(child)
+
+
+def test():
+    grid_rows = 4
+    grid_columns = 4
+
+    snake_positions = [[0, 2], [1, 2]]
+
+    start = snake_positions[0]
+    apple = [0, 3]
+
+    path = a_star_path(start, apple, grid_columns, grid_rows, snake_positions)
+
+    print(path)
