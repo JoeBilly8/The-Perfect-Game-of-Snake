@@ -3,9 +3,8 @@
 # 1) Back Button for menus
 # 2) Options Menu
 # 3) Unit Tests
-# 4) Implement A* Searching algorithm
-# 5) Implement Perturbated Hamiltonian
-# 6) Implement
+# 4) Implement Perturbated Hamiltonian
+# 5) Implement A* Improved Pertubated Hamiltonian
 
 #-----------------------IMPORTS-----------------------#
 import heapq
@@ -44,7 +43,7 @@ RED = pygame.Color("#930000")
 # Settings
 AI_PLAY = "STANDARD"
 DIFFICULTY = "MEDIUM"
-SNAKE_SPEED = 50  # 10 = SLOW, 25 = MEDIUM, 50 = FAST
+SNAKE_SPEED = 10  # 10 = SLOW, 25 = MEDIUM, 50 = FAST
 pygame.time.set_timer(SCREEN_UPDATE, SNAKE_SPEED)
 
 
@@ -759,7 +758,6 @@ def a_star_path(start, target, grid_columns, grid_rows, snake_positions):
 
     # Loop until you find the end
     while len(node_open_list) > 0 and iteration_number < max_iterations:
-        print("Searching for a path... " + str(iteration_number))
         iteration_number += 1
 
         # Get the current node
@@ -1151,9 +1149,18 @@ def ai_play_pertubated_hamiltonian():
     # Initialise clock object
     clock = pygame.time.Clock()
 
+    a_star_risk_mode = True
+
     # Main game loop
     run = True
     while run:
+        print("length of snake is: " + str(len(ai_play_game.snake.positions)))
+        snake_percent = (len(ai_play_game.snake.positions) /
+                         (GRID_WIDTH*GRID_HEIGHT))*100
+        print("SNAKE PERCENT IS: " + str(snake_percent))
+        if (snake_percent) > 25:
+            print("REACHED 15%")
+            a_star_risk_mode = False
 
         # Get position of the apple
         apple_position = ai_play_game.apple.position
@@ -1161,9 +1168,6 @@ def ai_play_pertubated_hamiltonian():
         snake_head_position = ai_play_game.snake.positions[0]
         # Get position of the tail
         snake_tail_position = ai_play_game.snake.positions[-1]
-
-        # print(snake_tail_position[0])
-        # print(snake_tail_position[1])
 
         snake_tail_index = maze_path.index(
             (snake_tail_position[0], snake_tail_position[1]))
@@ -1173,11 +1177,8 @@ def ai_play_pertubated_hamiltonian():
         # Search for adjacent nodes to the head
         adjacent_nodes = find_adjacent_nodes(
             snake_head_position, GRID_HEIGHT, GRID_WIDTH, ai_play_game.snake.positions)
-        # print("ADJACENT NODES ARE: ")
-        # print(adjacent_nodes)
 
-        # Get the shortest path from the head to the apple
-
+        # If we can take a shortcut, get the shortest path from the head to the apple
         if shortcut_cooldown == 0:
             shortest_path = a_star_path(
                 snake_head_position, apple_position, GRID_WIDTH, GRID_HEIGHT, ai_play_game.snake.positions)
@@ -1201,24 +1202,31 @@ def ai_play_pertubated_hamiltonian():
                     else:
                         non_elligble_range = maze_path[snake_tail_index:] + \
                             maze_path[:snake_head_index]
-                    if (node[0], node[1]) not in non_elligble_range and shortcut_info not in shortcuts_taken:
-                        # Store shortcut info so we don't end up in a loop
-                        shortcuts_taken.append(shortcut_info)
-                        # Set path position to 1 before the node we want to shortcut to
-                        path_position = maze_path.index((node[0], node[1]))-1
-                    elif (node[0], node[1]) in non_elligble_range:
-                        print("We're at path index: " + str(path_position))
-                        print("Our path is: " + str(maze_path))
-                        print(
-                            "NODE " + str(node) + " IS IN NON ELLIGIBLE RANGE OF " + str(non_elligble_range))
-                        print(snake_head_position)
-                        print(snake_tail_position)
-                    elif shortcut_info in shortcuts_taken:
-                        print("shortcut_info is: " + str(shortcut_info))
-                        print("shortcuts taken are: " + str(shortcuts_taken))
-                        print("\n Already taken this shortcut, cooling down...")
-                        shortcut_cooldown = int(5000/GRID_SIZE)
-                        # shortcuts_taken.clear()
+
+                    if not a_star_risk_mode:
+                        if (node[0], node[1]) not in non_elligble_range and shortcut_info not in shortcuts_taken:
+                            # Store shortcut info so we don't end up in a loop
+                            shortcuts_taken.append(shortcut_info)
+                            # Set path position to 1 before the node we want to shortcut to
+                            path_position = maze_path.index(
+                                (node[0], node[1]))-1
+                        elif (node[0], node[1]) in non_elligble_range:
+                            print("We're at path index: " + str(path_position))
+                            print("Our path is: " + str(maze_path))
+                            print(
+                                "NODE " + str(node) + " IS IN NON ELLIGIBLE RANGE OF " + str(non_elligble_range))
+                            print(snake_head_position)
+                            print(snake_tail_position)
+                        elif shortcut_info in shortcuts_taken:
+                            print("shortcut_info is: " + str(shortcut_info))
+                            print("shortcuts taken are: " +
+                                  str(shortcuts_taken))
+                            print("\n Already taken this shortcut, cooling down...")
+                            shortcut_cooldown = int(5000/GRID_SIZE)
+                            # shortcuts_taken.clear()
+                    else:
+                        path_position = maze_path.index(
+                            (node[0], node[1]))-1
 
         # If we're not at the end of our path index
         if path_position < (len(maze_path)-1):
@@ -1275,8 +1283,6 @@ def ai_play_pertubated_hamiltonian():
 
         ai_play_game.move_snake()
         # If the snake eats the apple, reset shortcut cooldown
-        print(ai_play_game.snake.positions[0])
-        print(ai_play_game.apple.position)
         if ai_play_game.snake.positions[0] == ai_play_game.apple.position:
             shortcut_cooldown = 0
         ai_play_game.check_collisions()  # Check for any collisions
