@@ -5,11 +5,12 @@
 # 3) Unit Tests
 # 4) Implement A* Searching algorithm
 # 5) Implement Perturbated Hamiltonian
+# 6) Implement
 
 #-----------------------IMPORTS-----------------------#
 import heapq
-import math
 from operator import index
+import time
 import pygame
 import sys
 import random
@@ -28,7 +29,7 @@ pygame.display.set_caption("The (not quite) Perfect Game Of Snake")
 SCREEN_UPDATE = pygame.USEREVENT
 
 # Setup Grid
-GRID_SIZE = 60  # EASY = 75, MEDIUM = 60, HARD = 30
+GRID_SIZE = 50  # EASY = 75, MEDIUM = 60, HARD = 50
 GRID_WIDTH = (SCREEN_WIDTH/GRID_SIZE)
 GRID_HEIGHT = (SCREEN_HEIGHT/GRID_SIZE)
 
@@ -43,7 +44,7 @@ RED = pygame.Color("#930000")
 # Settings
 AI_PLAY = "STANDARD"
 DIFFICULTY = "MEDIUM"
-SNAKE_SPEED = 25  # 10 = SLOW, 25 = MEDIUM, 50 = FAST
+SNAKE_SPEED = 50  # 10 = SLOW, 25 = MEDIUM, 50 = FAST
 pygame.time.set_timer(SCREEN_UPDATE, SNAKE_SPEED)
 
 
@@ -57,9 +58,9 @@ class snake():
     current_direction = up
 
     def __init__(self):
-        head_x = random.randint(0, GRID_WIDTH-1)
+        # Set to 1 so our tail doesn't spawn out of the grid
+        head_x = random.randint(1, GRID_WIDTH-1)
         head_y = random.randint(0, GRID_HEIGHT-1)
-        # TO DO - FIX THIS FOR BOUNDARY CASE
         self.positions = [[head_x, head_y], [head_x-1, head_y]]
 
     def draw(self, screen):
@@ -113,6 +114,7 @@ class game(object):
         self.game_score = 0
         self.moves = 0
         self.game_label = game_label
+        self.start_time = time.time()
 
     def move_snake(self):
         self.snake.move()
@@ -129,21 +131,39 @@ class game(object):
     def check_collisions(self):
         # If snake has eaten the apple, reposition the apple and add to the body
         if self.snake.positions[0] == self.apple.position:
-            # Randomise apple position
-            self.apple.randomise_pos(self.snake.positions)
             # Add an extra block to the snake's body
             self.snake.grow()
             self.game_score += 1
+            if self.game_score != (GRID_WIDTH*GRID_HEIGHT)-2:
+                print("gamescore is: " + str(self.game_score))
+                # Randomise apple position
+                self.apple.randomise_pos(self.snake.positions)
+            else:  # Otherwise we've won
+                print("SNAKE HAS WON")
+                end_time = time.time()
+                print("SCORE: " + str(self.game_score))
+                print("MOVES: " + str(self.moves))
+                print("TIME TAKEN: " +
+                      str(int(end_time-self.start_time)) + " seconds")
+                main_menu()
 
     def check_for_game_over(self):
         # If the snake hits itself - game over
         for pos in self.snake.positions[1:]:
             if self.snake.positions[0][0] == pos[0] and self.snake.positions[0][1] == pos[1]:
-                print("GAME OVER HOMES BY SNAKE")
+                # If the snake has hit itself but it is filling the grid, we've won
+                # if len(self.snake.positions) == (GRID_HEIGHT*GRID_WIDTH):
+                #     print("SNAKE HAS WON")
+                #     print("SCORE: " + str(self.game_score))
+                #     print("")
+                # else:
+                print("GAME OVER BY SNAKE")
+                print("SCORE: " + str(self.game_score))
+                print("MOVES: " + str(self.moves))
                 main_menu()
         # If the snake hits the edge of a border - game over
         if not (0 <= self.snake.positions[0][0] < GRID_WIDTH) or not (0 <= self.snake.positions[0][1] < GRID_HEIGHT):
-            print("GAME OVER HOMES BY BORDER")
+            print("GAME OVER BY BORDER")
             main_menu()
 
     def display_score(self):
@@ -734,13 +754,12 @@ def a_star_path(start, target, grid_columns, grid_rows, snake_positions):
     heapq.heappush(node_open_list, start_node)
 
     # Set a limit on the path_finding - if we reach this then break out and don't return a path
-    max_iteration = 250
+    max_iterations = ((GRID_HEIGHT*GRID_WIDTH)//2)
     iteration_number = 0
 
     # Loop until you find the end
-    while len(node_open_list) > 0 and iteration_number < max_iteration:
-        print("doing somet in the while loop")
-        print(iteration_number)
+    while len(node_open_list) > 0 and iteration_number < max_iterations:
+        print("Searching for a path... " + str(iteration_number))
         iteration_number += 1
 
         # Get the current node
@@ -802,20 +821,6 @@ def a_star_path(start, target, grid_columns, grid_rows, snake_positions):
 
     print("Couldn't find a path")
     return None
-
-
-# Don't think I need this anymore
-# def generate_index_array(path, grid_rows, grid_columns):
-#     index_array = []
-#     for row in range(grid_rows):
-#         column_index_array = []
-#         for column in range(grid_columns):
-#             print(str(row)+"," + str(column))
-#             index = path.index((row, column))
-#             print(index)
-#             column_index_array.append(index)
-#         index_array.append([column_index_array])
-#     return index_array
 
 
 def find_adjacent_nodes(node, grid_rows, grid_columns, snake_positions):
@@ -917,10 +922,6 @@ def renderTextCenteredAt(text, fontsize, colour, x, y, screen, allowed_width):
 
 
 #-----------------------CONTROL FLOW FUNCTIONS-----------------------#
-AI_PATH = [(0, 0), (1, 0), (2, 0), (3, 0), (4, 0), (5, 0), (5, 1), (5, 2), (5, 3), (5, 4), (5, 5), (4, 5), (3, 5), (2, 5), (1, 5), (0, 5), (0, 4), (1, 4),
-           (2, 4), (3, 4), (4, 4), (4, 3), (4, 2), (4, 1), (3, 1), (2, 1), (1, 1), (1, 2), (2, 2), (3, 2), (3, 3), (2, 3), (1, 3), (0, 3), (0, 2), (0, 1)]
-
-
 def main_menu():
     # Initialise clock object
     clock = pygame.time.Clock()
@@ -1285,6 +1286,10 @@ def ai_play_pertubated_hamiltonian():
         pygame.display.update()
         clock.tick(FPS)
         clock.tick(SNAKE_SPEED)
+
+
+def ai_play_improved_a_star_hamiltonian():
+    pass
 
 
 def options():
