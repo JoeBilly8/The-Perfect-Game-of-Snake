@@ -7,13 +7,16 @@
 # 5) Implement Perturbated Hamiltonian
 
 #-----------------------IMPORTS-----------------------#
+import heapq
+import math
+from operator import index
 import pygame
 import sys
 import random
 
 #-----------------------CONSTANTS-----------------------#
 # Define FPS
-FPS = 120
+FPS = 60
 
 # Initialise Pygame
 pygame.init()
@@ -21,7 +24,7 @@ pygame.init()
 # Setup Screen
 SCREEN_WIDTH, SCREEN_HEIGHT = 600, 600
 WINDOW = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption("The Perfect Game Of Snake")
+pygame.display.set_caption("The (not quite) Perfect Game Of Snake")
 SCREEN_UPDATE = pygame.USEREVENT
 
 # Setup Grid
@@ -56,6 +59,7 @@ class snake():
     def __init__(self):
         head_x = random.randint(0, GRID_WIDTH-1)
         head_y = random.randint(0, GRID_HEIGHT-1)
+        # TO DO - FIX THIS FOR BOUNDARY CASE
         self.positions = [[head_x, head_y], [head_x-1, head_y]]
 
     def draw(self, screen):
@@ -336,9 +340,6 @@ class path(object):
             if i[0] == cell:
                 cell_info = i
 
-        print("CELL INFO IS: ")
-        print(cell_info)
-
         # Retrieve where the node is in the cell is
         if node[0] % 2 == 0 and node[1] % 2 == 0:
             node_value = "top_left"
@@ -348,9 +349,6 @@ class path(object):
             node_value = "bottom_left"
         else:
             node_value = "bottom_right"
-
-        print("WE ARE IN NODE: ")
-        print(node_value)
 
         if direction == "NORTH":
             if node_value == "top_left":
@@ -696,11 +694,153 @@ class path(object):
         return path
 
 
-# class pertubated_path(object):
+class a_star_node:
+    def __init__(self, position, parent=None):
+        self.g = 0
+        self.h = 0
+        self.f = 0
+        self.parent = parent
+        self.position = [position[0], position[1]]
+
+    def __eq__(self, other):
+        return self.position == other.position
+
+    def __repr__(self):
+        return f"{self.position} - g: {self.g} h: {self.h} f: {self.f}"
+
+    # defining less than for purposes of heap queue
+    def __lt__(self, other):
+        return self.f < other.f
+
+    # defining greater than for purposes of heap queue
+    def __gt__(self, other):
+        return self.f > other.f
 
 
 #-----------------------CLASSES-----------------------#
 
+#-----------------------AI FUNCTIONS------------------#
+def a_star_path(start, target, grid_columns, grid_rows, snake_positions):
+    # Create a start node and a target node the specified node in the grid
+    start_node = a_star_node(start)
+    target = a_star_node(target)
+
+    # Initialize the node open and closed list, add start_node to open list to begin with
+    node_open_list = []
+    node_closed_list = []
+
+    # Heapify the node_open_list
+    heapq.heapify(node_open_list)
+    heapq.heappush(node_open_list, start_node)
+
+    # Set a limit on the path_finding - if we reach this then break out and don't return a path
+    max_iteration = 250
+    iteration_number = 0
+
+    # Loop until you find the end
+    while len(node_open_list) > 0 and iteration_number < max_iteration:
+        print("doing somet in the while loop")
+        print(iteration_number)
+        iteration_number += 1
+
+        # Get the current node
+        current_node = heapq.heappop(node_open_list)
+        node_closed_list.append(current_node)
+
+        # If we've reached our target, return the path
+        if current_node == target:
+            print("FOUND A PATH")
+            path = []
+            current = current_node
+            while current is not None:
+                path.append(current.position)
+                current = current.parent
+            return path[::-1]  # Return reversed path
+
+        # Generating the children of the current node
+        children = []
+        # Adjacent squares in the context of the snake game
+        adjacent_positions = [(0, -1), (0, 1), (-1, 0), (1, 0)]
+
+        for new_position in adjacent_positions:
+            # Get the node position
+            node_position = [
+                current_node.position[0] + new_position[0], current_node.position[1] + new_position[1]]
+
+            # Ensure we're not going past the edge of the snake grid
+            if(node_position[0] > (grid_columns-1) or node_position[0] < 0 or node_position[1] > (grid_rows-1) or node_position[1] < 0):
+                continue  # Skip the iteration
+
+            # Ensure we're not in the body/tail
+            if node_position in snake_positions:
+                continue
+
+            # Create a new node
+            new_node = a_star_node(node_position, current_node)
+
+            # Add it to the children
+            children.append(new_node)
+
+        # Loop through the children and add them to the node_open_list if not already in it
+        for child in children:
+            # If child is on the node closed list then skip
+            if child in node_closed_list:
+                continue
+            # Otherwise create the f, g and h values of the child
+            child.g = current_node.g + 1
+            child.h = (abs(child.position[0] - target.position[0]) +
+                       abs(child.position[1] - target.position[1]))
+            child.f = child.g + child.h
+
+            # If the child is already in the open node list and has a greater g value then skip
+            for open_node in node_open_list:
+                if child == open_node and child.g >= open_node.g:
+                    continue
+
+            # Otherwise add the child to the node open list
+            heapq.heappush(node_open_list, child)
+
+    print("Couldn't find a path")
+    return None
+
+
+# Don't think I need this anymore
+# def generate_index_array(path, grid_rows, grid_columns):
+#     index_array = []
+#     for row in range(grid_rows):
+#         column_index_array = []
+#         for column in range(grid_columns):
+#             print(str(row)+"," + str(column))
+#             index = path.index((row, column))
+#             print(index)
+#             column_index_array.append(index)
+#         index_array.append([column_index_array])
+#     return index_array
+
+
+def find_adjacent_nodes(node, grid_rows, grid_columns, snake_positions):
+    adjacent_nodes = []
+    # print("NODE IS: " + str(node))
+    # Adjacent squares in the context of the snake game
+    adjacent_positions = [(0, -1), (0, 1), (-1, 0), (1, 0)]
+    for new_position in adjacent_positions:
+        node_position = [node[0] + new_position[0], node[1] + new_position[1]]
+        # Ensure we're not going past the edge of the snake grid
+        if(node_position[0] > (grid_columns-1) or node_position[0] < 0 or node_position[1] > (grid_rows-1) or node_position[1] < 0):
+            continue  # Skip the iteration
+        # Ensure we're not in the body/tail
+        if node_position in snake_positions:
+            continue
+
+        adjacent_nodes.append(node_position)
+
+    return adjacent_nodes
+
+
+#-----------------------AI FUNCTIONS------------------#
+
+
+#---------------------HELPER FUNCTIONS----------------#
 
 def fill_screen(screen, colour):
     screen.fill(colour)
@@ -773,6 +913,8 @@ def renderTextCenteredAt(text, fontsize, colour, x, y, screen, allowed_width):
 
         y_offset += fh
 
+#---------------------HELPER FUNCTIONS----------------#
+
 
 #-----------------------CONTROL FLOW FUNCTIONS-----------------------#
 AI_PATH = [(0, 0), (1, 0), (2, 0), (3, 0), (4, 0), (5, 0), (5, 1), (5, 2), (5, 3), (5, 4), (5, 5), (4, 5), (3, 5), (2, 5), (1, 5), (0, 5), (0, 4), (1, 4),
@@ -799,7 +941,8 @@ def main_menu():
                         manual_play()
                     if ai_play_text_rect.collidepoint(event.pos):
                         print("AI PLAY PRESSED")
-                        ai_play()
+                        ai_play_pertubated_hamiltonian()
+                        # ai_play_simple_hamiltonian()
                     if options_text_rect.collidepoint(event.pos):
                         print("OPTIONS BUTTON PRESSED")
                         options()
@@ -889,8 +1032,10 @@ def manual_play():
         pygame.display.update()
         clock.tick(FPS)
 
+# Simple Hamiltonian
 
-def ai_play():
+
+def ai_play_simple_hamiltonian():
     # Initialise the maze and the path the snake is going to follow
     maze_object = maze(GRID_HEIGHT/2, GRID_WIDTH/2)
     prim_maze = maze_object.generate_prim_maze()
@@ -913,6 +1058,10 @@ def ai_play():
     # Main game loop
     run = True
     while run:
+        print("PATH POSITION: " + str(path_position))
+        print("SNAKE POSITION: ")
+        print(snake_position)
+
         # If we're not at the end of our path index
         if path_position < (len(maze_path)-1):
             pass
@@ -966,6 +1115,169 @@ def ai_play():
             ai_play_game.moves += 1
 
         ai_play_game.move_snake()
+        ai_play_game.check_collisions()  # Check for any collisions
+
+        # Update the visuals
+        ai_play_game.update_game()
+        pygame.display.update()
+        clock.tick(FPS)
+        clock.tick(SNAKE_SPEED)
+
+# Pertubated Hamiltonian
+
+
+def ai_play_pertubated_hamiltonian():
+    # Initialise the maze and the path the snake is going to follow
+    maze_object = maze(GRID_HEIGHT/2, GRID_WIDTH/2)
+    prim_maze = maze_object.generate_prim_maze()
+    path_object = path(GRID_HEIGHT, GRID_WIDTH)
+    maze_path = path_object.generate_path(prim_maze)
+
+    # Initialise game class for AI Play
+    ai_play_game = game("AI PLAY - PERTUBATED HAMILTONIAN")
+
+    # Get the initial position of the snake
+    snake_position = (
+        ai_play_game.snake.positions[0][0], ai_play_game.snake.positions[0][1])
+
+    # Get the index of the path to start at
+    path_position = maze_path.index(snake_position)
+
+    # Initialise shortcut repeat list
+    shortcuts_taken = []
+    shortcut_cooldown = 0
+
+    # Initialise clock object
+    clock = pygame.time.Clock()
+
+    # Main game loop
+    run = True
+    while run:
+
+        # Get position of the apple
+        apple_position = ai_play_game.apple.position
+        # Get position of the head
+        snake_head_position = ai_play_game.snake.positions[0]
+        # Get position of the tail
+        snake_tail_position = ai_play_game.snake.positions[-1]
+
+        # print(snake_tail_position[0])
+        # print(snake_tail_position[1])
+
+        snake_tail_index = maze_path.index(
+            (snake_tail_position[0], snake_tail_position[1]))
+        snake_head_index = maze_path.index(
+            (snake_head_position[0], snake_head_position[1]))
+
+        # Search for adjacent nodes to the head
+        adjacent_nodes = find_adjacent_nodes(
+            snake_head_position, GRID_HEIGHT, GRID_WIDTH, ai_play_game.snake.positions)
+        # print("ADJACENT NODES ARE: ")
+        # print(adjacent_nodes)
+
+        # Get the shortest path from the head to the apple
+
+        if shortcut_cooldown == 0:
+            shortest_path = a_star_path(
+                snake_head_position, apple_position, GRID_WIDTH, GRID_HEIGHT, ai_play_game.snake.positions)
+
+        # Reduce the shortcut cooldown if we're in one
+        if shortcut_cooldown > 0:
+            shortcut_cooldown -= 1
+            print(shortcut_cooldown)
+
+        # Check we were able to find a path
+        if shortest_path != None and shortcut_cooldown == 0:
+            # If there is an adjacent node in the shortest path
+            for node in adjacent_nodes:
+                if node == shortest_path[1]:
+                    # Get information about the shortcut to potentially store
+                    shortcut_info = [snake_head_index, snake_tail_index, len(
+                        ai_play_game.snake.positions)]
+                    # Check if the shortcut node is in the indexes inbetween where the head and the tail are
+                    if snake_head_index > snake_tail_index:
+                        non_elligble_range = maze_path[snake_tail_index:snake_head_index]
+                    else:
+                        non_elligble_range = maze_path[snake_tail_index:] + \
+                            maze_path[:snake_head_index]
+                    if (node[0], node[1]) not in non_elligble_range and shortcut_info not in shortcuts_taken:
+                        # Store shortcut info so we don't end up in a loop
+                        shortcuts_taken.append(shortcut_info)
+                        # Set path position to 1 before the node we want to shortcut to
+                        path_position = maze_path.index((node[0], node[1]))-1
+                    elif (node[0], node[1]) in non_elligble_range:
+                        print("We're at path index: " + str(path_position))
+                        print("Our path is: " + str(maze_path))
+                        print(
+                            "NODE " + str(node) + " IS IN NON ELLIGIBLE RANGE OF " + str(non_elligble_range))
+                        print(snake_head_position)
+                        print(snake_tail_position)
+                    elif shortcut_info in shortcuts_taken:
+                        print("shortcut_info is: " + str(shortcut_info))
+                        print("shortcuts taken are: " + str(shortcuts_taken))
+                        print("\n Already taken this shortcut, cooling down...")
+                        shortcut_cooldown = int(5000/GRID_SIZE)
+                        # shortcuts_taken.clear()
+
+        # If we're not at the end of our path index
+        if path_position < (len(maze_path)-1):
+            pass
+        # If we are, "reset" the index
+        else:
+            path_position = -1
+
+        # PATH DIRECTION DEFINITIONS
+        path_right = (maze_path[path_position+1] ==
+                      (snake_position[0] + 1, snake_position[1]))
+        path_left = (maze_path[path_position+1] ==
+                     (snake_position[0] - 1, snake_position[1]))
+        path_up = (maze_path[path_position+1] ==
+                   (snake_position[0], snake_position[1] - 1))
+        path_down = (maze_path[path_position+1] ==
+                     (snake_position[0], snake_position[1] + 1))
+
+        for event in pygame.event.get():
+            # Listen for exit
+            if event.type == pygame.QUIT:
+                run = False
+                pygame.quit()
+                sys.exit()
+
+        direction_before_move = ai_play_game.snake.current_direction
+        direction_after_move = ai_play_game.snake.current_direction
+
+        if path_position < (len(maze_path)-1):
+            if path_right:
+                ai_play_game.snake.current_direction = ai_play_game.snake.right
+                snake_position = (
+                    snake_position[0]+1, snake_position[1])
+                direction_after_move = ai_play_game.snake.right
+            elif path_left:
+                ai_play_game.snake.current_direction = ai_play_game.snake.left
+                snake_position = (
+                    snake_position[0]-1, snake_position[1])
+                direction_after_move = ai_play_game.snake.left
+            elif path_up:
+                ai_play_game.snake.current_direction = ai_play_game.snake.up
+                snake_position = (
+                    snake_position[0], snake_position[1]-1)
+                direction_after_move = ai_play_game.snake.up
+            elif path_down:
+                ai_play_game.snake.current_direction = ai_play_game.snake.down
+                snake_position = (
+                    snake_position[0], snake_position[1]+1)
+                direction_after_move = ai_play_game.snake.down
+            path_position += 1
+
+        if (direction_after_move != direction_before_move):
+            ai_play_game.moves += 1
+
+        ai_play_game.move_snake()
+        # If the snake eats the apple, reset shortcut cooldown
+        print(ai_play_game.snake.positions[0])
+        print(ai_play_game.apple.position)
+        if ai_play_game.snake.positions[0] == ai_play_game.apple.position:
+            shortcut_cooldown = 0
         ai_play_game.check_collisions()  # Check for any collisions
 
         # Update the visuals
