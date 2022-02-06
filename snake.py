@@ -117,6 +117,7 @@ class game(object):
 
     def move_snake(self):
         self.snake.move()
+        print("moving snake")
 
     def update_game(self):
         draw_grid(WINDOW)
@@ -937,6 +938,7 @@ def main_menu():
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
                     if manual_play_text_rect.collidepoint(event.pos):
+                        print("MANUAL PLAY PRESSED")
                         manual_play()
                     if ai_play_text_rect.collidepoint(event.pos):
                         print("AI PLAY PRESSED")
@@ -1030,6 +1032,7 @@ def manual_play():
         manual_play_game.update_game()
         pygame.display.update()
         clock.tick(FPS)
+        clock.tick(SNAKE_SPEED)
 
 # Simple Hamiltonian
 
