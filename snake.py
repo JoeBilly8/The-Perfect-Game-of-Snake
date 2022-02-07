@@ -25,7 +25,6 @@ pygame.init()
 SCREEN_WIDTH, SCREEN_HEIGHT = 600, 600
 WINDOW = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("The (not quite) Perfect Game Of Snake")
-SCREEN_UPDATE = pygame.USEREVENT
 
 # Setup Grid
 GRID_SIZE = 50  # EASY = 75, MEDIUM = 60, HARD = 50
@@ -44,7 +43,6 @@ RED = pygame.Color("#930000")
 AI_PLAY = "STANDARD"
 DIFFICULTY = "MEDIUM"
 SNAKE_SPEED = 10  # 10 = SLOW, 25 = MEDIUM, 50 = FAST
-pygame.time.set_timer(SCREEN_UPDATE, SNAKE_SPEED)
 
 
 #-----------------------CLASSES-----------------------#
@@ -714,7 +712,7 @@ class path(object):
         return path
 
 
-class a_star_node:
+class a_star_node(object):
     def __init__(self, position, parent=None):
         self.g = 0
         self.h = 0
@@ -1011,10 +1009,6 @@ def manual_play():
                 run = False
                 pygame.quit()
                 sys.exit()
-            if event.type == SCREEN_UPDATE:  # Maybe do this a bit differently?
-                manual_play_game.move_snake()
-                manual_play_game.check_collisions()  # Check for any collisions
-                keydown = False
             # Listen for user keystrokes to control the snake
             if event.type == pygame.KEYDOWN and not keydown:
                 keydown = True
@@ -1030,6 +1024,9 @@ def manual_play():
 
         # Update the visuals
         manual_play_game.update_game()
+        manual_play_game.move_snake()
+        keydown = False
+        manual_play_game.check_collisions()  # Check for any collisions
         pygame.display.update()
         clock.tick(FPS)
         clock.tick(SNAKE_SPEED)
