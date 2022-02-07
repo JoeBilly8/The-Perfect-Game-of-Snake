@@ -4,7 +4,7 @@
 # 2) Options Menu
 # 3) Unit Tests
 # 4) Implement Perturbated Hamiltonian
-# 5) Implement A* Improved Pertubated Hamiltonian
+# 5) Implement A* Improved Pertubated Hamiltonian (need a survival mode for early A* paths)
 
 #-----------------------IMPORTS-----------------------#
 import heapq
@@ -13,6 +13,11 @@ import time
 import pygame
 import sys
 import random
+
+#---------------------LOAD IMAGES---------------------#
+back_button_image = pygame.transform.scale(
+    pygame.image.load('images/BackButton.png'), (125, 100))
+
 
 #-----------------------CONSTANTS-----------------------#
 # Define FPS
@@ -41,7 +46,8 @@ RED = pygame.Color("#930000")
 
 # Settings
 AI_PLAY = "STANDARD"
-DIFFICULTY = "MEDIUM"
+# Grid size difficulty dictionary
+DIFFICULTY = {"EASY": 50, "MEDIUM": 60, "HARD": 50}
 SNAKE_SPEED = 10  # 10 = SLOW, 25 = MEDIUM, 50 = FAST
 
 
@@ -917,8 +923,9 @@ def renderTextCenteredAt(text, fontsize, colour, x, y, screen, allowed_width):
 
 #---------------------HELPER FUNCTIONS----------------#
 
-
 #-----------------------CONTROL FLOW FUNCTIONS-----------------------#
+
+
 def main_menu():
     # Initialise clock object
     clock = pygame.time.Clock()
@@ -1330,6 +1337,11 @@ def more_info():
         line_y = (SCREEN_HEIGHT/8)+50
         pygame.draw.line(WINDOW, GREY, (line_x, line_y),
                          (line_x, line_y+(SCREEN_HEIGHT-(SCREEN_HEIGHT/4)-50)), 2)
+
+        # Draw Back Button
+        back_button_x = 10
+        back_button_y = 10
+        WINDOW.blit(back_button_image, (back_button_x, back_button_y))
 
         # Draw Text
         # Title Text
