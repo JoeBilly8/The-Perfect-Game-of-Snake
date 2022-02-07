@@ -1,10 +1,10 @@
 # NOTES:
 # TO DO:
-# 1) Back Button for menus
-# 2) Options Menu
-# 3) Unit Tests
-# 4) Implement Perturbated Hamiltonian
-# 5) Implement A* Improved Pertubated Hamiltonian (need a survival mode for early A* paths)
+# 1) Options Menu
+# 2) Unit Tests
+# 3) Implement Perturbated Hamiltonian
+# 4) Implement A* Improved Pertubated Hamiltonian (need a survival mode for early A* paths)
+# 5) Fix game labels
 
 #-----------------------IMPORTS-----------------------#
 import heapq
@@ -16,7 +16,7 @@ import random
 
 #---------------------LOAD IMAGES---------------------#
 back_button_image = pygame.transform.scale(
-    pygame.image.load('images/BackButton.png'), (125, 100))
+    pygame.image.load('images/BackButton.png'), (100, 75))
 
 
 #-----------------------CONSTANTS-----------------------#
@@ -1306,7 +1306,61 @@ def ai_play_improved_a_star_hamiltonian():
 
 
 def options():
-    pass
+    # Initialise clock object
+    clock = pygame.time.Clock()
+    # Main Menu Loop
+    run = True
+    while run:
+        # Check for events
+        for event in pygame.event.get():
+            # Check for exit
+            if event.type == pygame.QUIT:
+                run = False
+                pygame.quit()
+                sys.exit()
+            # Check for mouse clicking
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:
+                    if back_button_image.get_rect().collidepoint(event.pos):
+                        main_menu()
+
+        # Fill Background
+        fill_screen(WINDOW, GREEN)
+
+        # Draw Side Line
+        line_x = (50)
+        line_y = (SCREEN_HEIGHT/8)+75
+        pygame.draw.line(WINDOW, GREY, (line_x, line_y),
+                         (line_x, line_y+(SCREEN_HEIGHT-(SCREEN_HEIGHT/2)-50)), 2)
+
+        # Draw Back Button
+        back_button_x = 50
+        back_button_y = 35
+        WINDOW.blit(back_button_image, (back_button_x, back_button_y))
+
+        # Draw Text
+        # Title Text
+        snake_text, snake_text_rect = create_text(
+            "OPTIONS    ", 40, (SCREEN_WIDTH/2), (SCREEN_HEIGHT/8))
+        WINDOW.blit(snake_text, snake_text_rect)
+
+        # Difficulty Text
+        snake_text, snake_text_rect = create_text(
+            "Difficulty:", 20, (SCREEN_WIDTH/4), (SCREEN_HEIGHT/4) + 40)
+        WINDOW.blit(snake_text, snake_text_rect)
+
+        # AI Option Text
+        snake_text, snake_text_rect = create_text(
+            "AI Algorithm:", 20, (SCREEN_WIDTH/4), (SCREEN_HEIGHT/4) + 120)
+        WINDOW.blit(snake_text, snake_text_rect)
+
+        # Speed Option Text
+        snake_text, snake_text_rect = create_text(
+            "Snake Speed:", 20, (SCREEN_WIDTH/4), (SCREEN_HEIGHT/4) + 200)
+        WINDOW.blit(snake_text, snake_text_rect)
+
+        clock.tick(FPS)
+        pygame.display.update()
 
 
 def more_info():
@@ -1325,9 +1379,8 @@ def more_info():
             # Check for mouse clicking
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
-                    pass
-                    # if back_button_text_rect.collidepoint(event.pos):
-                    #     main_menu()
+                    if back_button_image.get_rect().collidepoint(event.pos):
+                        main_menu()
 
         # Fill Background
         fill_screen(WINDOW, GREEN)
@@ -1339,8 +1392,8 @@ def more_info():
                          (line_x, line_y+(SCREEN_HEIGHT-(SCREEN_HEIGHT/4)-50)), 2)
 
         # Draw Back Button
-        back_button_x = 10
-        back_button_y = 10
+        back_button_x = 50
+        back_button_y = 35
         WINDOW.blit(back_button_image, (back_button_x, back_button_y))
 
         # Draw Text
