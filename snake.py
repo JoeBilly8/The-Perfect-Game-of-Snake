@@ -4,6 +4,10 @@
 # 2) Unit Tests
 # 3) Implement A* Improved Pertubated Hamiltonian (need a survival mode for early A* paths)
 # 4) Split Code + Tidy
+# 5) Do a testing cycle to collect lots of runs of data
+# 6) Add head/tail graphics
+# 7) Add background music and sounds
+# 8) Credits page?
 
 
 #-----------------------IMPORTS-----------------------#
