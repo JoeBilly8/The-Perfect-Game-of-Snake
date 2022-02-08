@@ -1,10 +1,10 @@
 # NOTES:
 # TO DO:
-# 1) Options Menu
+# 1) Fix game labels
 # 2) Unit Tests
-# 3) Implement Perturbated Hamiltonian
-# 4) Implement A* Improved Pertubated Hamiltonian (need a survival mode for early A* paths)
-# 5) Fix game labels
+# 3) Implement A* Improved Pertubated Hamiltonian (need a survival mode for early A* paths)
+# 4) Split Code + Tidy
+
 
 #-----------------------IMPORTS-----------------------#
 import heapq
@@ -31,8 +31,18 @@ SCREEN_WIDTH, SCREEN_HEIGHT = 600, 600
 WINDOW = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("The (not quite) Perfect Game Of Snake")
 
+# Settings
+AI_PLAY = "SIMPLE"
+# Speed is defined with a dictionary so the button functions are more descriptive
+SPEED_DICT = {"SLOW": 10, "MEDIUM": 25, "FAST": 50}
+SPEED = "MEDIUM"
+SNAKE_SPEED = SPEED_DICT[SPEED]  # 10 = SLOW, 25 = MEDIUM, 50 = FAST
+# Difficulty is defined through the grid size
+DIFFICULTY_DICT = {"EASY": 75, "MEDIUM": 60, "HARD": 50}
+DIFFICULTY = "MEDIUM"
+GRID_SIZE = DIFFICULTY_DICT[DIFFICULTY]  # EASY = 75, MEDIUM = 60, HARD = 50
+
 # Setup Grid
-GRID_SIZE = 50  # EASY = 75, MEDIUM = 60, HARD = 50
 GRID_WIDTH = (SCREEN_WIDTH/GRID_SIZE)
 GRID_HEIGHT = (SCREEN_HEIGHT/GRID_SIZE)
 
@@ -43,12 +53,7 @@ BACKGROUND_GREEN = pygame.Color("#47B430")
 GREY = pygame.Color("#D3D3D3")
 DARK_GREY = pygame.Color("#545454")
 RED = pygame.Color("#930000")
-
-# Settings
-AI_PLAY = "STANDARD"
-# Grid size difficulty dictionary
-DIFFICULTY = {"EASY": 50, "MEDIUM": 60, "HARD": 50}
-SNAKE_SPEED = 10  # 10 = SLOW, 25 = MEDIUM, 50 = FAST
+BLACK = pygame.Color("#000000")
 
 
 #-----------------------CLASSES-----------------------#
@@ -121,7 +126,6 @@ class game(object):
 
     def move_snake(self):
         self.snake.move()
-        print("moving snake")
 
     def update_game(self):
         draw_grid(WINDOW)
@@ -741,9 +745,56 @@ class a_star_node(object):
         return self.f > other.f
 
 
+class button_rect(object):
+    def __init__(self, text,  pos, font_size, background_colour, text_colour):
+        self.x, self.y = pos
+        self.font = pygame.font.SysFont("RobotoCondensed-Bold.ttf", font_size)
+        self.set_text(text, background_colour, text_colour)
+
+    def set_text(self, text, background_colour, text_colour):
+        self.text = self.font.render(text, 1, text_colour)
+        self.size = self.text.get_size()
+        surface_size = (95, 27)
+        print(surface_size)
+        self.surface = pygame.Surface(surface_size)
+        self.surface.fill(background_colour)
+        self.text_rect = self.text.get_rect(
+            center=self.surface.get_rect().center)
+        self.surface.blit(self.text, self.text_rect)
+        self.rect = pygame.Rect(
+            self.x, self.y, surface_size[0], surface_size[1])
+
+    def show(self, window=WINDOW):
+        window.blit(self.surface, (self.x, self.y))
+
+    def click(self, event, setting, setting_value):
+        x, y = pygame.mouse.get_pos()
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if pygame.mouse.get_pressed()[0]:
+                if self.rect.collidepoint(x, y):
+                    if setting == "DIFFICULTY":
+                        global DIFFICULTY
+                        global GRID_SIZE
+                        global GRID_WIDTH
+                        global GRID_HEIGHT
+                        DIFFICULTY = setting_value
+                        GRID_SIZE = DIFFICULTY_DICT[DIFFICULTY]
+                        GRID_WIDTH = (SCREEN_WIDTH/GRID_SIZE)
+                        GRID_HEIGHT = (SCREEN_HEIGHT/GRID_SIZE)
+                    elif setting == "ALGORITHM":
+                        global AI_PLAY
+                        AI_PLAY = setting_value
+                    elif setting == "SPEED":
+                        global SPEED
+                        global SNAKE_SPEED
+                        SPEED = setting_value
+                        SNAKE_SPEED = SPEED_DICT[SPEED]
+
 #-----------------------CLASSES-----------------------#
 
 #-----------------------AI FUNCTIONS------------------#
+
+
 def a_star_path(start, target, grid_columns, grid_rows, snake_positions):
     # Create a start node and a target node the specified node in the grid
     start_node = a_star_node(start)
@@ -942,13 +993,22 @@ def main_menu():
             # Check for mouse clicking
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
+                    print("Difficulty is: " + DIFFICULTY)
+                    print("AI PLAY is: " + AI_PLAY)
+                    print("Speed is: " + SPEED)
                     if manual_play_text_rect.collidepoint(event.pos):
                         print("MANUAL PLAY PRESSED")
                         manual_play()
                     if ai_play_text_rect.collidepoint(event.pos):
                         print("AI PLAY PRESSED")
-                        ai_play_pertubated_hamiltonian()
-                        # ai_play_simple_hamiltonian()
+                        if AI_PLAY == "SIMPLE":
+                            ai_play_simple_hamiltonian()
+                        elif AI_PLAY == "PERTUBATED":
+                            ai_play_pertubated_hamiltonian()
+                        elif AI_PLAY == "IMPROVED":
+                            ai_play_improved_a_star_hamiltonian()
+                        else:
+                            print("Error, setting not selected")
                     if options_text_rect.collidepoint(event.pos):
                         print("OPTIONS BUTTON PRESSED")
                         options()
@@ -1156,6 +1216,164 @@ def ai_play_pertubated_hamiltonian():
     # Initialise clock object
     clock = pygame.time.Clock()
 
+    # Main game loop
+    run = True
+    while run:
+        # Get position of the apple
+        apple_position = ai_play_game.apple.position
+        # Get position of the head
+        snake_head_position = ai_play_game.snake.positions[0]
+        # Get position of the tail
+        snake_tail_position = ai_play_game.snake.positions[-1]
+
+        snake_tail_index = maze_path.index(
+            (snake_tail_position[0], snake_tail_position[1]))
+        snake_head_index = maze_path.index(
+            (snake_head_position[0], snake_head_position[1]))
+
+        # Search for adjacent nodes to the head
+        adjacent_nodes = find_adjacent_nodes(
+            snake_head_position, GRID_HEIGHT, GRID_WIDTH, ai_play_game.snake.positions)
+
+        # If we can take a shortcut, get the shortest path from the head to the apple
+        if shortcut_cooldown == 0:
+            shortest_path = a_star_path(
+                snake_head_position, apple_position, GRID_WIDTH, GRID_HEIGHT, ai_play_game.snake.positions)
+
+        # Reduce the shortcut cooldown if we're in one
+        if shortcut_cooldown > 0:
+            shortcut_cooldown -= 1
+            print(shortcut_cooldown)
+
+        # Check we were able to find a path
+        if shortest_path != None and shortcut_cooldown == 0:
+            # If there is an adjacent node in the shortest path
+            for node in adjacent_nodes:
+                if node == shortest_path[1]:
+                    # Get information about the shortcut to potentially store
+                    shortcut_info = [snake_head_index, snake_tail_index, len(
+                        ai_play_game.snake.positions)]
+                    # Check if the shortcut node is in the indexes inbetween where the head and the tail are
+                    if snake_head_index > snake_tail_index:
+                        non_elligble_range = maze_path[snake_tail_index:snake_head_index]
+                    else:
+                        non_elligble_range = maze_path[snake_tail_index:] + \
+                            maze_path[:snake_head_index]
+
+                    if ((node[0], node[1]) not in non_elligble_range) and (shortcut_info not in shortcuts_taken):
+                        # Store shortcut info so we don't end up in a loop
+                        shortcuts_taken.append(shortcut_info)
+                        # Set path position to 1 before the node we want to shortcut to
+                        path_position = maze_path.index(
+                            (node[0], node[1]))-1
+                    elif (node[0], node[1]) in non_elligble_range:
+                        print("We're at path index: " + str(path_position))
+                        print("Our path is: " + str(maze_path))
+                        print(
+                            "NODE " + str(node) + " IS IN NON ELLIGIBLE RANGE OF " + str(non_elligble_range))
+                        print(snake_head_position)
+                        print(snake_tail_position)
+                    elif shortcut_info in shortcuts_taken:
+                        print("shortcut_info is: " + str(shortcut_info))
+                        print("shortcuts taken are: " +
+                              str(shortcuts_taken))
+                        print("\n Already taken this shortcut, cooling down...")
+                        shortcut_cooldown = int(5000/GRID_SIZE)
+                        # shortcuts_taken.clear()
+                    # else:
+                    #     path_position = maze_path.index(
+                    #         (node[0], node[1]))-1
+
+        # If we're not at the end of our path index
+        if path_position < (len(maze_path)-1):
+            pass
+        # If we are, "reset" the index
+        else:
+            path_position = -1
+
+        # PATH DIRECTION DEFINITIONS
+        path_right = (maze_path[path_position+1] ==
+                      (snake_position[0] + 1, snake_position[1]))
+        path_left = (maze_path[path_position+1] ==
+                     (snake_position[0] - 1, snake_position[1]))
+        path_up = (maze_path[path_position+1] ==
+                   (snake_position[0], snake_position[1] - 1))
+        path_down = (maze_path[path_position+1] ==
+                     (snake_position[0], snake_position[1] + 1))
+
+        for event in pygame.event.get():
+            # Listen for exit
+            if event.type == pygame.QUIT:
+                run = False
+                pygame.quit()
+                sys.exit()
+
+        direction_before_move = ai_play_game.snake.current_direction
+        direction_after_move = ai_play_game.snake.current_direction
+
+        if path_position < (len(maze_path)-1):
+            if path_right:
+                ai_play_game.snake.current_direction = ai_play_game.snake.right
+                snake_position = (
+                    snake_position[0]+1, snake_position[1])
+                direction_after_move = ai_play_game.snake.right
+            elif path_left:
+                ai_play_game.snake.current_direction = ai_play_game.snake.left
+                snake_position = (
+                    snake_position[0]-1, snake_position[1])
+                direction_after_move = ai_play_game.snake.left
+            elif path_up:
+                ai_play_game.snake.current_direction = ai_play_game.snake.up
+                snake_position = (
+                    snake_position[0], snake_position[1]-1)
+                direction_after_move = ai_play_game.snake.up
+            elif path_down:
+                ai_play_game.snake.current_direction = ai_play_game.snake.down
+                snake_position = (
+                    snake_position[0], snake_position[1]+1)
+                direction_after_move = ai_play_game.snake.down
+            path_position += 1
+
+        if (direction_after_move != direction_before_move):
+            ai_play_game.moves += 1
+
+        ai_play_game.move_snake()
+        # If the snake eats the apple, reset shortcut cooldown
+        if ai_play_game.snake.positions[0] == ai_play_game.apple.position:
+            shortcut_cooldown = 0
+        ai_play_game.check_collisions()  # Check for any collisions
+
+        # Update the visuals
+        ai_play_game.update_game()
+        pygame.display.update()
+        clock.tick(FPS)
+        clock.tick(SNAKE_SPEED)
+
+
+def ai_play_improved_a_star_hamiltonian():
+    # Initialise the maze and the path the snake is going to follow
+    maze_object = maze(GRID_HEIGHT/2, GRID_WIDTH/2)
+    prim_maze = maze_object.generate_prim_maze()
+    path_object = path(GRID_HEIGHT, GRID_WIDTH)
+    maze_path = path_object.generate_path(prim_maze)
+
+    # Initialise game class for AI Play
+    ai_play_game = game("AI PLAY - IMPROVED A* HAMILTONIAN")
+
+    # Get the initial position of the snake
+    snake_position = (
+        ai_play_game.snake.positions[0][0], ai_play_game.snake.positions[0][1])
+
+    # Get the index of the path to start at
+    path_position = maze_path.index(snake_position)
+
+    # Initialise shortcut repeat list
+    shortcuts_taken = []
+    shortcut_cooldown = 0
+
+    # Initialise clock object
+    clock = pygame.time.Clock()
+
     a_star_risk_mode = True
 
     # Main game loop
@@ -1301,16 +1519,81 @@ def ai_play_pertubated_hamiltonian():
         clock.tick(SNAKE_SPEED)
 
 
-def ai_play_improved_a_star_hamiltonian():
-    pass
-
-
 def options():
     # Initialise clock object
     clock = pygame.time.Clock()
+
+    # Difficulty Buttons
+    difficulty_selected = "MEDIUM"
+    easy_button = button_rect(
+        "EASY", (225, (SCREEN_HEIGHT/4)+27), 25, GREY, BLACK)
+    medium_button = button_rect(
+        "MEDIUM", (350, (SCREEN_HEIGHT/4)+27), 25, GREY, BLACK)
+    hard_button = button_rect(
+        "HARD", (475, (SCREEN_HEIGHT/4)+27), 25, GREY, BLACK)
+
+    # AI Algorithm Selection Buttons
+    algorithm_selected = "SIMPLE"
+    simple_button = button_rect(
+        "SIMPLE", (225, (SCREEN_HEIGHT/4)+107), 25, GREY, BLACK)
+    pertubated_button = button_rect(
+        "PERTUBATED", (350, (SCREEN_HEIGHT/4)+107), 20, GREY, BLACK)
+    improved_a_star_button = button_rect(
+        "IMPROVED", (475, (SCREEN_HEIGHT/4)+107), 25, GREY, BLACK)
+
+    # Speed Buttons
+    speed_selected = "MEDIUM"
+    slow_speed_button = button_rect(
+        "SLOW", (225, (SCREEN_HEIGHT/4)+187), 25, GREY, BLACK)
+    medium_speed_button = button_rect(
+        "MEDIUM", (350, (SCREEN_HEIGHT/4)+187), 25, GREY, BLACK)
+    fast_speed_button = button_rect(
+        "FAST", (475, (SCREEN_HEIGHT/4)+187), 25, GREY, BLACK)
+
     # Main Menu Loop
     run = True
     while run:
+        # Set currently selected options
+        # DIFFICULTY
+        if DIFFICULTY == "EASY":
+            easy_button.set_text("EASY", DARK_GREY, GREY)
+            medium_button.set_text("MEDIUM", GREY, BLACK)
+            hard_button.set_text("HARD", GREY, BLACK)
+        elif DIFFICULTY == "MEDIUM":
+            easy_button.set_text("EASY", GREY, BLACK)
+            medium_button.set_text("MEDIUM", DARK_GREY, GREY)
+            hard_button.set_text("HARD", GREY, BLACK)
+        elif DIFFICULTY == "HARD":
+            easy_button.set_text("EASY", GREY, BLACK)
+            medium_button.set_text("MEDIUM", GREY, BLACK)
+            hard_button.set_text("HARD", DARK_GREY, GREY)
+        # ALGORITHM
+        if AI_PLAY == "SIMPLE":
+            simple_button.set_text("SIMPLE", DARK_GREY, GREY)
+            pertubated_button.set_text("PERTUBATED", GREY, BLACK)
+            improved_a_star_button.set_text("IMPROVED", GREY, BLACK)
+        elif AI_PLAY == "PERTUBATED":
+            simple_button.set_text("SIMPLE", GREY, BLACK)
+            pertubated_button.set_text("PERTUBATED", DARK_GREY, GREY)
+            improved_a_star_button.set_text("IMPROVED", GREY, BLACK)
+        elif AI_PLAY == "IMPROVED":
+            simple_button.set_text("SIMPLE", GREY, BLACK)
+            pertubated_button.set_text("PERTUBATED", GREY, BLACK)
+            improved_a_star_button.set_text("IMPROVED", DARK_GREY, GREY)
+        # SPEED
+        if SPEED == "SLOW":
+            slow_speed_button.set_text("SLOW", DARK_GREY, GREY)
+            medium_speed_button.set_text("MEDIUM", GREY, BLACK)
+            fast_speed_button.set_text("FAST", GREY, BLACK)
+        elif SPEED == "MEDIUM":
+            slow_speed_button.set_text("SLOW", GREY, BLACK)
+            medium_speed_button.set_text("MEDIUM", DARK_GREY, GREY)
+            fast_speed_button.set_text("FAST", GREY, BLACK)
+        elif SPEED == "FAST":
+            slow_speed_button.set_text("SLOW", GREY, BLACK)
+            medium_speed_button.set_text("MEDIUM", GREY, BLACK)
+            fast_speed_button.set_text("FAST", DARK_GREY, GREY)
+
         # Check for events
         for event in pygame.event.get():
             # Check for exit
@@ -1323,6 +1606,21 @@ def options():
                 if event.button == 1:
                     if back_button_image.get_rect().collidepoint(event.pos):
                         main_menu()
+
+            # Difficulty Button Clicked
+            easy_button.click(event, "DIFFICULTY", "EASY")
+            medium_button.click(event, "DIFFICULTY", "MEDIUM")
+            hard_button.click(event, "DIFFICULTY", "HARD")
+
+            # Algorithm Button Clicked
+            simple_button.click(event, "ALGORITHM", "SIMPLE")
+            pertubated_button.click(event, "ALGORITHM", "PERTUBATED")
+            improved_a_star_button.click(event, "ALGORITHM", "IMPROVED")
+
+            # Speed Button Clicked
+            slow_speed_button.click(event, "SPEED", "SLOW")
+            medium_speed_button.click(event, "SPEED", "MEDIUM")
+            fast_speed_button.click(event, "SPEED", "FAST")
 
         # Fill Background
         fill_screen(WINDOW, GREEN)
@@ -1358,6 +1656,21 @@ def options():
         snake_text, snake_text_rect = create_text(
             "Snake Speed:", 20, (SCREEN_WIDTH/4), (SCREEN_HEIGHT/4) + 200)
         WINDOW.blit(snake_text, snake_text_rect)
+
+        # Show Difficulty Buttons
+        easy_button.show()
+        medium_button.show()
+        hard_button.show()
+
+        # Show AI Algorithm Selection Buttons
+        simple_button.show()
+        pertubated_button.show()
+        improved_a_star_button.show()
+
+        # Show Speed Buttons
+        slow_speed_button.show()
+        medium_speed_button.show()
+        fast_speed_button.show()
 
         clock.tick(FPS)
         pygame.display.update()
