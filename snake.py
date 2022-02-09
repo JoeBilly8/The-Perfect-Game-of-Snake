@@ -36,14 +36,14 @@ WINDOW = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("The (not quite) Perfect Game Of Snake")
 
 # Settings
-AI_PLAY = "SIMPLE"
+AI_PLAY = "IMPROVED"
 # Speed is defined with a dictionary so the button functions are more descriptive
 SPEED_DICT = {"SLOW": 10, "MEDIUM": 25, "FAST": 50}
 SPEED = "MEDIUM"
 SNAKE_SPEED = SPEED_DICT[SPEED]  # 10 = SLOW, 25 = MEDIUM, 50 = FAST
 # Difficulty is defined through the grid size
 DIFFICULTY_DICT = {"EASY": 75, "MEDIUM": 60, "HARD": 50}
-DIFFICULTY = "MEDIUM"
+DIFFICULTY = "EASY"
 GRID_SIZE = DIFFICULTY_DICT[DIFFICULTY]  # EASY = 75, MEDIUM = 60, HARD = 50
 
 # Setup Grid
@@ -813,7 +813,7 @@ def a_star_path(start, target, grid_columns, grid_rows, snake_positions):
     heapq.heappush(node_open_list, start_node)
 
     # Set a limit on the path_finding - if we reach this then break out and don't return a path
-    max_iterations = ((GRID_HEIGHT*GRID_WIDTH)//2)
+    max_iterations = ((GRID_HEIGHT*GRID_WIDTH))
     iteration_number = 0
 
     # Loop until you find the end
@@ -1378,6 +1378,7 @@ def ai_play_improved_a_star_hamiltonian():
     # Initialise clock object
     clock = pygame.time.Clock()
 
+    # Initialise A* "risk mode" where we sacrifice guranteed survival for faster and more human looking performance
     a_star_risk_mode = True
 
     # Main game loop
@@ -1388,8 +1389,8 @@ def ai_play_improved_a_star_hamiltonian():
                          (GRID_WIDTH*GRID_HEIGHT))*100
         print("SNAKE PERCENT IS: " + str(snake_percent))
         if (snake_percent) > 25:
-            print("REACHED 15%")
-            a_star_risk_mode = False
+            print("REACHED 25%")
+            a_star_risk_mode = False  # If we've reached 25% turn off risk mode
 
         # Get position of the apple
         apple_position = ai_play_game.apple.position
@@ -1418,7 +1419,7 @@ def ai_play_improved_a_star_hamiltonian():
             print(shortcut_cooldown)
 
         # Check we were able to find a path
-        if shortest_path != None and shortcut_cooldown == 0:
+        if shortest_path != None and len(shortest_path) > 1 and shortcut_cooldown == 0:
             # If there is an adjacent node in the shortest path
             for node in adjacent_nodes:
                 if node == shortest_path[1]:
@@ -1440,22 +1441,75 @@ def ai_play_improved_a_star_hamiltonian():
                             path_position = maze_path.index(
                                 (node[0], node[1]))-1
                         elif (node[0], node[1]) in non_elligble_range:
-                            print("We're at path index: " + str(path_position))
-                            print("Our path is: " + str(maze_path))
                             print(
                                 "NODE " + str(node) + " IS IN NON ELLIGIBLE RANGE OF " + str(non_elligble_range))
-                            print(snake_head_position)
-                            print(snake_tail_position)
                         elif shortcut_info in shortcuts_taken:
                             print("shortcut_info is: " + str(shortcut_info))
                             print("shortcuts taken are: " +
                                   str(shortcuts_taken))
                             print("\n Already taken this shortcut, cooling down...")
                             shortcut_cooldown = int(5000/GRID_SIZE)
-                            # shortcuts_taken.clear()
-                    else:
+                        else:
+                            next_potential_path_pos = maze_path.index(
+                                (node[0], node[1]))-1
+                            next_potential_path_pos = maze_path[next_potential_path_pos]
+                            next_potential_path_pos = [
+                                next_potential_path_pos[0], next_potential_path_pos[1]]
+                            # If the planned route on the path is clear of our body, carry on as normal
+                            if (next_potential_path_pos not in ai_play_game.snake.positions):
+                                path_position = maze_path.index(
+                                    (node[0], node[1]))-1
+                            else:
+                                print(
+                                    "WE R FINNISH- SURVIVAL MODE ENGAGEd NOT A* RISK MODE")
+                                for node in adjacent_nodes:
+                                    next_potential_path_pos = maze_path.index(
+                                        (node[0], node[1]))-1
+                                    next_potential_path_pos = maze_path[next_potential_path_pos]
+                                    next_potential_path_pos = [
+                                        next_potential_path_pos[0], next_potential_path_pos[1]]
+                                    # If the next step on our path isn't about to kill us, take it
+                                    if not (next_potential_path_pos not in ai_play_game.snake.positions):
+                                        path_position = maze_path.index(
+                                            (node[0], node[1]))-1
+                                    else:
+                                        print("THERES A BODY AT: ")
+                                        print(node[0])
+                                        print(node[1])
+                    # If we are in A* risk mode then follow the path
+                    elif a_star_risk_mode:
                         path_position = maze_path.index(
                             (node[0], node[1]))-1
+                    elif not a_star_risk_mode:
+                        print(
+                            "WE R FINNISH- SURVIVAL MODE ENGAGEd NOT A* RISK MODE")
+                        for node in adjacent_nodes:
+                            next_potential_path_pos = maze_path.index(
+                                (node[0], node[1]))-1
+                            next_potential_path_pos = maze_path[next_potential_path_pos]
+                            next_potential_path_pos = [
+                                next_potential_path_pos[0], next_potential_path_pos[1]]
+                            # If the next step on our path isn't about to kill us, take it
+                            if not (next_potential_path_pos not in ai_play_game.snake.positions):
+                                path_position = maze_path.index(
+                                    (node[0], node[1]))-1
+                            else:
+                                print("THERES A BODY AT: ")
+                                print(node[0])
+                                print(node[1])
+        # If we're still in A* risk mode but can't find a path - stay alive until we can again
+        elif a_star_risk_mode and (maze_path[path_position][0], maze_path[path_position][1]) in ai_play_game.snake.positions:
+            print("WE R FINNISH- SURVIVAL MODE ENGAGEd A STAR RISQE MODE")
+            for node in adjacent_nodes:
+                next_potential_path_pos = maze_path.index(
+                    (node[0], node[1]))-1
+                next_potential_path_pos = maze_path[next_potential_path_pos]
+                next_potential_path_pos = [
+                    next_potential_path_pos[0], next_potential_path_pos[1]]
+                # If the next step on our path isn't about to kill us, take it
+                if not (next_potential_path_pos not in ai_play_game.snake.positions):
+                    path_position = maze_path.index(
+                        (node[0], node[1]))-1
 
         # If we're not at the end of our path index
         if path_position < (len(maze_path)-1):
