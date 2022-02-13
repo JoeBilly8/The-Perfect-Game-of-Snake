@@ -1419,7 +1419,8 @@ def ai_play_improved_a_star_hamiltonian():
             print(shortcut_cooldown)
 
         # Check we were able to find a path
-        if shortest_path != None and len(shortest_path) > 1 and shortcut_cooldown == 0:
+        # If we're smaller than 50% of the board, try to take a shortcut, otherwise just follow the hamiltonian path
+        if shortest_path != None and len(shortest_path) > 1 and shortcut_cooldown == 0 and snake_percent < 50:
             # If there is an adjacent node in the shortest path
             for node in adjacent_nodes:
                 if node == shortest_path[1]:
@@ -1498,18 +1499,32 @@ def ai_play_improved_a_star_hamiltonian():
                                 print(node[0])
                                 print(node[1])
         # If we're still in A* risk mode but can't find a path - stay alive until we can again
-        elif a_star_risk_mode and (maze_path[path_position][0], maze_path[path_position][1]) in ai_play_game.snake.positions:
-            print("WE R FINNISH- SURVIVAL MODE ENGAGEd A STAR RISQE MODE")
-            for node in adjacent_nodes:
-                next_potential_path_pos = maze_path.index(
-                    (node[0], node[1]))-1
-                next_potential_path_pos = maze_path[next_potential_path_pos]
-                next_potential_path_pos = [
-                    next_potential_path_pos[0], next_potential_path_pos[1]]
-                # If the next step on our path isn't about to kill us, take it
-                if not (next_potential_path_pos not in ai_play_game.snake.positions):
-                    path_position = maze_path.index(
+        elif a_star_risk_mode:
+            coords_path_pos = [maze_path[path_position]
+                               [0], maze_path[path_position][1]]
+            print(coords_path_pos)
+            if coords_path_pos in ai_play_game.snake.positions:
+                clock.tick(.75)
+                print("WE R FINNISH- SURVIVAL MODE ENGAGEd A STAR RISQE MODE")
+                if adjacent_nodes == None:
+                    print("No adjacent nodes")
+                    clock.tick(.1)
+                for node in adjacent_nodes:
+                    print("potential node to move to is: ")
+                    print(node)
+                    # clock.tick(.5)
+                    next_potential_path_pos = maze_path.index(
                         (node[0], node[1]))-1
+                    next_potential_path_pos = maze_path[next_potential_path_pos]
+                    next_potential_path_pos = [
+                        next_potential_path_pos[0], next_potential_path_pos[1]]
+                    # If the next step on our path isn't about to kill us, take it
+                    if not (next_potential_path_pos not in ai_play_game.snake.positions):
+                        path_position = maze_path.index(
+                            (node[0], node[1]))-1
+        else:
+            print(
+                "----------------------------------------NAH BRO----------------------------------------")
 
         # If we're not at the end of our path index
         if path_position < (len(maze_path)-1):
