@@ -5,8 +5,8 @@
 # 3) Implement A* Improved Pertubated Hamiltonian (need a survival mode for early A* paths)
 # 4) Go through and descriptively comment code (particularly AI functions)
 # 5) Do a testing cycle to collect lots of runs of data
-# 6) Add head/tail graphics
-# 7) Add background music and sounds
+# 6) Add a
+# 7) Add a gameover page with score, time, sounds
 # 8) Credits page?
 
 
@@ -39,6 +39,7 @@ BLACK = pygame.Color("#000000")
 FPS = 60
 
 # Initialise Pygame
+pygame.mixer.pre_init(44100, -16, 2, 512)
 pygame.init()
 
 # Setup Screen
@@ -61,6 +62,12 @@ GRID_SIZE = DIFFICULTY_DICT[DIFFICULTY]
 GRID_WIDTH = (SCREEN_WIDTH/GRID_SIZE)
 GRID_HEIGHT = (SCREEN_HEIGHT/GRID_SIZE)
 #-----------------------INITIALISATION-----------------------#
+
+#---------------------LOAD SOUNDS---------------------#
+apple_eaten_sound = pygame.mixer.Sound("sounds/Eat_Sound.wav")
+background_music = pygame.mixer.Sound("sounds/Background_Music.mp3")
+menu_music = pygame.mixer.Sound("sounds/Menu_Music.wav")
+mouse_click_sound = pygame.mixer.Sound("sounds/Mouse_Click.wav")
 
 
 #---------------------LOAD IMAGES---------------------#
@@ -122,7 +129,6 @@ class apple(object):
         apple_rect = pygame.Rect((self.x * GRID_SIZE),
                                  (self.y * GRID_SIZE), GRID_SIZE, GRID_SIZE)
         screen.blit(apple_image, apple_rect)
-        # pygame.draw.rect(screen, RED, apple_rect)
 
     def randomise_pos(self, snake_body):
         self.x = random.randint(0, (GRID_WIDTH-1))
@@ -145,6 +151,8 @@ class game(object):
         self.moves = 0
         self.game_label = game_label
         self.start_time = time.time()
+        menu_music.stop()
+        background_music.play()
 
     def move_snake(self):
         self.snake.move()
@@ -162,6 +170,7 @@ class game(object):
         # If snake has eaten the apple, reposition the apple and add to the body
         if self.snake.positions[0] == self.apple.position:
             # Add an extra block to the snake's body
+            apple_eaten_sound.play()
             self.snake.grow()
             self.game_score += 1
             if self.game_score != (GRID_WIDTH*GRID_HEIGHT)-2:
@@ -279,6 +288,8 @@ class button_rect(object):
 
 # Main Menu Screen
 def main_menu():
+    background_music.stop()
+    menu_music.play()
     # Initialise clock object
     clock = pygame.time.Clock()
     # Main Menu Loop
