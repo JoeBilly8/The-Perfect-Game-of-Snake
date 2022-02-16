@@ -3,7 +3,7 @@
 # 1) Fix game labels
 # 2) Unit Tests
 # 3) Implement A* Improved Pertubated Hamiltonian (need a survival mode for early A* paths)
-# 4) Split Code + Tidy
+# 4) Go through and descriptively comment code (particularly AI functions)
 # 5) Do a testing cycle to collect lots of runs of data
 # 6) Add head/tail graphics
 # 7) Add background music and sounds
@@ -11,19 +11,33 @@
 
 
 #-----------------------IMPORTS-----------------------#
-import heapq
-from operator import index
 import time
 import pygame
 import sys
 import random
+from snake_ai_functions.a_star_search import a_star_path
+from snake_ai_functions.find_adjacent_nodes import find_adjacent_nodes
+from snake_ai_functions.prim_maze import maze
+from snake_ai_functions.generate_path import path
+from snake_helper_functions.helper import *
 
 #---------------------LOAD IMAGES---------------------#
 back_button_image = pygame.transform.scale(
     pygame.image.load('images/BackButton.png'), (100, 75))
 
 
-#-----------------------CONSTANTS-----------------------#
+#---------------------DEFINE COLOUR SCHEME---------------------#
+# Colour Scheme From Design
+GREEN = pygame.Color("#476930")
+LIGHT_GREEN = pygame.Color("#477830")
+BACKGROUND_GREEN = pygame.Color("#47B430")
+GREY = pygame.Color("#D3D3D3")
+DARK_GREY = pygame.Color("#545454")
+RED = pygame.Color("#930000")
+BLACK = pygame.Color("#000000")
+
+
+#-----------------------INITIALISATION-----------------------#
 # Define FPS
 FPS = 60
 
@@ -37,27 +51,21 @@ pygame.display.set_caption("The (not quite) Perfect Game Of Snake")
 
 # Settings
 AI_PLAY = "IMPROVED"
-# Speed is defined with a dictionary so the button functions are more descriptive
+# Speed and difficulty are defined with a dictionary so the button functions are more descriptive
 SPEED_DICT = {"SLOW": 10, "MEDIUM": 25, "FAST": 50}
 SPEED = "MEDIUM"
-SNAKE_SPEED = SPEED_DICT[SPEED]  # 10 = SLOW, 25 = MEDIUM, 50 = FAST
+SNAKE_SPEED = SPEED_DICT[SPEED]
 # Difficulty is defined through the grid size
 DIFFICULTY_DICT = {"EASY": 75, "MEDIUM": 60, "HARD": 50}
 DIFFICULTY = "EASY"
-GRID_SIZE = DIFFICULTY_DICT[DIFFICULTY]  # EASY = 75, MEDIUM = 60, HARD = 50
+GRID_SIZE = DIFFICULTY_DICT[DIFFICULTY]
 
 # Setup Grid
 GRID_WIDTH = (SCREEN_WIDTH/GRID_SIZE)
 GRID_HEIGHT = (SCREEN_HEIGHT/GRID_SIZE)
 
-# Colour Scheme From Design
-GREEN = pygame.Color("#476930")
-LIGHT_GREEN = pygame.Color("#477830")
-BACKGROUND_GREEN = pygame.Color("#47B430")
-GREY = pygame.Color("#D3D3D3")
-DARK_GREY = pygame.Color("#545454")
-RED = pygame.Color("#930000")
-BLACK = pygame.Color("#000000")
+
+#-----------------------INITIALISATION-----------------------#
 
 
 #-----------------------CLASSES-----------------------#
@@ -131,13 +139,13 @@ class game(object):
     def move_snake(self):
         self.snake.move()
 
-    def update_game(self):
-        draw_grid(WINDOW)
+    def update_game(self, window=WINDOW):
+        draw_grid(window, GRID_WIDTH, GRID_HEIGHT, GRID_SIZE)
         self.display_score()
         self.display_moves()
         self.display_game_label()
-        self.snake.draw(WINDOW)
-        self.apple.draw(WINDOW)
+        self.snake.draw(window)
+        self.apple.draw(window)
         self.check_for_game_over()
 
     def check_collisions(self):
@@ -179,21 +187,21 @@ class game(object):
             main_menu()
 
     def display_score(self):
-        roboto_font = pygame.font.Font("RobotoCondensed-Bold.ttf", 20)
+        roboto_font = pygame.font.Font("fonts/RobotoCondensed-Bold.ttf", 20)
         score = roboto_font.render(
             str("SCORE: " + str(self.game_score)), 1, GREY)
         score_rect = score.get_rect(center=(45, 20))
         WINDOW.blit(score, score_rect)
 
     def display_moves(self):
-        roboto_font = pygame.font.Font("RobotoCondensed-Bold.ttf", 20)
+        roboto_font = pygame.font.Font("fonts/RobotoCondensed-Bold.ttf", 20)
         score = roboto_font.render(
             str("MOVES: " + str(self.moves)), 1, GREY)
         score_rect = score.get_rect(center=(47.5, 40))
         WINDOW.blit(score, score_rect)
 
     def display_game_label(self):
-        roboto_font = pygame.font.Font("RobotoCondensed-Bold.ttf", 20)
+        roboto_font = pygame.font.Font("fonts/RobotoCondensed-Bold.ttf", 20)
         game_label = roboto_font.render(str(self.game_label), 1, GREY)
         offset = 90 if len(self.game_label) * \
             60 > 90 else len(self.game_label)*60
@@ -202,564 +210,17 @@ class game(object):
         WINDOW.blit(game_label, game_label_rect)
 
 
-class maze(object):
-    def __init__(self, grid_rows, grid_columns):
-        # Define rows/columns from the width/height - easier to mentally picture
-        self.grid_rows = grid_rows
-        self.grid_columns = grid_columns
-
-    def get_cell_neighbours(self, cell):
-        # Get grid rows and columns from the object
-        grid_rows = self.grid_rows
-        grid_columns = self.grid_columns
-
-        # Define neighbours as empty list to begin with
-        neighbours = []
-
-        # Define the 9 potential cases for neighbours of cells in a grid: (Note middle isn't listed as this will be "else")
-        top_left_corner = (cell[0]-1 < 0 and cell[1] - 1 < 0)
-        top_row = (cell[0] + 1 < grid_columns and cell[0] -
-                   1 >= 0 and cell[1] - 1 < 0)
-        top_right_corner = (cell[0]+1 >= grid_columns and cell[1] - 1 < 0)
-        right_row = (cell[0]+1 >= grid_columns and cell[1] -
-                     1 >= 0 and cell[1] + 1 < grid_rows)
-        bottom_right_corner = (
-            cell[0]+1 == grid_columns and cell[1] + 1 >= grid_rows)
-        bottom_row = (cell[0]+1 <= grid_columns and cell[0] -
-                      1 >= 0 and cell[1] + 1 >= grid_rows)
-        bottom_left_corner = (cell[0]-1 < 0 and cell[1] + 1 >= grid_rows)
-        left_row = (cell[0]-1 < 0 and cell[1] - 1 >=
-                    0 and cell[1] + 1 < grid_rows)
-
-        # Return different neighbours depending on where the cell is in the grid
-        if(top_left_corner):
-            neighbours = [(cell[0]+1, cell[1]), (cell[0], cell[1]+1)]
-        elif(top_row):
-            neighbours = [(cell[0]-1, cell[1]), (cell[0]+1,
-                                                 cell[1]), (cell[0], cell[1]+1)]
-        elif(top_right_corner):
-            neighbours = [(cell[0]-1, cell[1]), (cell[0], cell[1]+1)]
-        elif(right_row):
-            neighbours = [(cell[0]-1, cell[1]),
-                          (cell[0], cell[1]+1), (cell[0], cell[1]-1)]
-        elif(bottom_right_corner):
-            neighbours = [(cell[0]-1, cell[1]), (cell[0], cell[1]-1)]
-        elif(bottom_row):
-            neighbours = [(cell[0]-1, cell[1]), (cell[0]+1,
-                                                 cell[1]), (cell[0], cell[1]-1)]
-        elif(bottom_left_corner):
-            neighbours = [(cell[0]+1, cell[1]), (cell[0], cell[1]-1)]
-        elif(left_row):
-            neighbours = [(cell[0]+1, cell[1]),
-                          (cell[0], cell[1]+1), (cell[0], cell[1]-1)]
-        # Use else for any cell in the middle of the grid
-        else:
-            neighbours = [(cell[0]+1, cell[1]), (cell[0], cell[1]+1),
-                          (cell[0], cell[1]-1), (cell[0]-1, cell[1])]
-
-        return neighbours
-
-    def generate_prim_maze(self):
-        # Get grid rows and columns from the object
-        grid_rows = self.grid_rows
-        grid_columns = self.grid_columns
-
-        # Get number of cells in the grid
-        number_of_cells = (grid_rows*grid_columns)
-
-        # Pick a random cell
-        x = random.randint(0, (grid_columns-1))
-        y = random.randint(0, (grid_rows-1))
-        cell = (x, y)
-
-        # Add random cell and None entrance to maze_list
-        # Maze List is a list of lists of the cells and their wall entrances and exists
-        maze_list = [[cell]]
-        cells_visited = [cell]
-        neighbours_list = []
-
-        while((len(cells_visited)) < number_of_cells):
-            # Get all neighbours of the cell and add them to neighbours_list if they're not already in there
-            neighbours_list = neighbours_list + list(set(self.get_cell_neighbours(
-                cell)) - set(neighbours_list))
-
-            # Pick a random neighbour from the neighbours_list
-            cell_neighbour = neighbours_list[random.randint(
-                0, len(neighbours_list)-1)]
-
-            # If the neighbour is unvisitied then create a "wall" between the neighbour and the cell we're looking at
-            if cell_neighbour not in cells_visited:
-                cells_visited.append(cell_neighbour)
-
-                # If the neighbour cell has a cell visited to it's left then then (cellx, celly): "wall_left"
-                if((cell_neighbour[0]-1, cell_neighbour[1]) in cells_visited):
-                    connection_cell = (cell_neighbour[0]-1, cell_neighbour[1])
-                    for i in maze_list:
-                        if connection_cell in i:
-                            # Append connection cell wall exit information to maze list for cell
-                            i.append("right")
-                    # Append neighbour cell wall entrance information to maze list for cell neighbour
-                    maze_list.append([cell_neighbour, "left"])
-
-                # If the neighbour cell has a cell visited above it then (cellx, celly): "wall_above"
-                elif((cell_neighbour[0], cell_neighbour[1]-1) in cells_visited):
-                    connection_cell = (cell_neighbour[0], cell_neighbour[1]-1)
-                    for i in maze_list:
-                        if connection_cell in i:
-                            # Append connection cell wall exit information to maze list for cell
-                            i.append("bottom")
-                    # Append neighbour cell wall entrance information to maze list for cell neighbour
-                    maze_list.append([cell_neighbour, "top"])
-
-                # If the neighbour cell has a cell visited to it's right then then (cellx, celly): "wall_right"
-                elif((cell_neighbour[0]+1, cell_neighbour[1]) in cells_visited):
-                    connection_cell = (cell_neighbour[0]+1, cell_neighbour[1])
-                    for i in maze_list:
-                        if connection_cell in i:
-                            # Append connection cell wall exit information to maze list for cell
-                            i.append("left")
-                    # Append neighbour cell wall entrance information to maze list for cell neighbour
-                    maze_list.append([cell_neighbour, "right"])
-
-                # If the neighbour cell has a cell visitied below it then (cellx, celly): "wall_below"
-                elif((cell_neighbour[0], cell_neighbour[1]+1) in cells_visited):
-                    connection_cell = (cell_neighbour[0], cell_neighbour[1]+1)
-                    for i in maze_list:
-                        if connection_cell in i:
-                            # Append connection cell wall exit information to maze list for cell
-                            i.append("top")
-                    # Append neighbour cell wall entrance information to maze list for cell neighbour
-                    maze_list.append([cell_neighbour, "bottom"])
-
-                # Move to the newly visited cell_neighbour and restart the process
-                cell = cell_neighbour
-            # Loop back round and look at the newly added cell
-
-        return maze_list
-
-
-class path(object):
-    #### CLASS: PATH ####
-    #### Description: Generates a path for a grid given a randomly generated prims maze of size (grid_columns/2), (grid_rows/2) ####
-
-    # Define the direction change in a nested dictionary
-    direction_change_definitions = {'NORTH': {'right': 'EAST', 'left': 'WEST'}, 'EAST': {'right': 'SOUTH', 'left': 'NORTH'}, 'SOUTH': {'right': 'WEST', 'left': 'EAST'}, 'WEST': {
-        'right': 'NORTH', 'left': 'SOUTH'}}
-
-    # Define the movement depending on direction in a nested dictionary
-    direction_movement_definitions = {'NORTH': {'right': {'x': 1, 'y': 0}, 'forward': {'x': 0, 'y': -1}, 'left': {'x': -1, 'y': 0}}, 'EAST': {'right': {'x': 0, 'y': 1}, 'forward': {'x': 1, 'y': 0}, 'left': {
-        'x': 0, 'y': -1}}, 'SOUTH': {'right': {'x': -1, 'y': 0}, 'forward': {'x': 0, 'y': 1}, 'left': {'x': 1, 'y': 0}}, 'WEST': {'right': {'x': 0, 'y': -1}, 'forward': {'x': -1, 'y': 0}, 'left': {'x': 0, 'y': 1}}}
-
-    def __init__(self, grid_rows, grid_columns):
-        self.grid_columns = grid_columns
-        self.grid_rows = grid_rows
-
-    def can_go_right(self, maze, direction, cell, node, grid_columns, grid_rows):
-        if not self.is_wall_right(maze, direction, cell, node) and not self.is_edge_right(grid_columns, grid_rows, direction, node):
-            return True
-        else:
-            return False
-
-    def can_go_forward(self, maze, direction, cell, node, grid_columns, grid_rows):
-        if not self.is_wall_infront(maze, direction, cell, node) and not self.is_edge_infront(grid_columns, grid_rows, direction, node):
-            return True
-        else:
-            return False
-
-    def is_wall_right(self, maze, direction, cell, node):
-        # Retrieve maze infomation about the cell
-        for i in maze:
-            if i[0] == cell:
-                cell_info = i
-
-        # Retrieve where the node is in the cell is
-        if node[0] % 2 == 0 and node[1] % 2 == 0:
-            node_value = "top_left"
-        elif node[0] % 2 == 1 and node[1] % 2 == 0:
-            node_value = "top_right"
-        elif node[0] % 2 == 0 and node[1] % 2 == 1:
-            node_value = "bottom_left"
-        else:
-            node_value = "bottom_right"
-
-        if direction == "NORTH":
-            if node_value == "top_left":
-                if "top" in cell_info:
-                    is_wall_right = True
-                else:
-                    is_wall_right = False
-
-            elif node_value == "bottom_left":
-                if "bottom" in cell_info:
-                    is_wall_right = True
-                else:
-                    is_wall_right = False
-            else:
-                is_wall_right = False
-
-        elif direction == "SOUTH":
-            if node_value == "top_right":
-                if "top" in cell_info:
-                    is_wall_right = True
-                else:
-                    is_wall_right = False
-
-            elif node_value == "bottom_right":
-                if "bottom" in cell_info:
-                    is_wall_right = True
-                else:
-                    is_wall_right = False
-            else:
-                is_wall_right = False
-
-        if direction == "EAST":
-            if node_value == "top_left":
-                if "left" in cell_info:
-                    is_wall_right = True
-                else:
-                    is_wall_right = False
-
-            elif node_value == "top_right":
-                if "right" in cell_info:
-                    is_wall_right = True
-                else:
-                    is_wall_right = False
-            else:
-                is_wall_right = False
-
-        if direction == "WEST":
-            if node_value == "bottom_left":
-                if "left" in cell_info:
-                    is_wall_right = True
-                else:
-                    is_wall_right = False
-
-            elif node_value == "bottom_right":
-                if "right" in cell_info:
-                    is_wall_right = True
-                else:
-                    is_wall_right = False
-            else:
-                is_wall_right = False
-
-        return is_wall_right
-
-    def is_wall_infront(self, maze, direction, cell, node):
-        # Retrieve maze infomation about the cell
-        for i in maze:
-            if i[0] == cell:
-                cell_info = i
-
-        # Retrieve where the node is in the cell is
-        if node[0] % 2 == 0 and node[1] % 2 == 0:
-            node_value = "top_left"
-        elif node[0] % 2 == 1 and node[1] % 2 == 0:
-            node_value = "top_right"
-        elif node[0] % 2 == 0 and node[1] % 2 == 1:
-            node_value = "bottom_left"
-        else:
-            node_value = "bottom_right"
-
-        if direction == "NORTH":
-            if node_value == "bottom_left":
-                if "left" in cell_info:
-                    is_wall_infront = True
-                else:
-                    is_wall_infront = False
-
-            elif node_value == "bottom_right":
-                if "right" in cell_info:
-                    is_wall_infront = True
-                else:
-                    is_wall_infront = False
-            else:
-                is_wall_infront = False
-
-        elif direction == "SOUTH":
-            if node_value == "top_left":
-                if "left" in cell_info:
-                    is_wall_infront = True
-                else:
-                    is_wall_infront = False
-
-            elif node_value == "top_right":
-                if "right" in cell_info:
-                    is_wall_infront = True
-                else:
-                    is_wall_infront = False
-            else:
-                is_wall_infront = False
-
-        if direction == "EAST":
-            if node_value == "top_left":
-                if "top" in cell_info:
-                    is_wall_infront = True
-                else:
-                    is_wall_infront = False
-
-            elif node_value == "bottom_left":
-                if "bottom" in cell_info:
-                    is_wall_infront = True
-                else:
-                    is_wall_infront = False
-            else:
-                is_wall_infront = False
-
-        if direction == "WEST":
-            if node_value == "top_right":
-                if "top" in cell_info:
-                    is_wall_infront = True
-                else:
-                    is_wall_infront = False
-
-            elif node_value == "bottom_right":
-                if "bottom" in cell_info:
-                    is_wall_infront = True
-                else:
-                    is_wall_infront = False
-            else:
-                is_wall_infront = False
-
-        return is_wall_infront
-
-    def is_edge_right(self, grid_columns, grid_rows, direction, node):
-        # Retrieve where the node is in the cell is
-        if node[0] % 2 == 0 and node[1] % 2 == 0:
-            node_value = "top_left"
-        elif node[0] % 2 == 1 and node[1] % 2 == 0:
-            node_value = "top_right"
-        elif node[0] % 2 == 0 and node[1] % 2 == 1:
-            node_value = "bottom_left"
-        else:
-            node_value = "bottom_right"
-
-        if direction == "NORTH":
-            if node_value == "bottom_right":
-                if node[0] == (grid_columns-1):
-                    is_edge_right = True
-                else:
-                    is_edge_right = False
-
-            elif node_value == "top_right":
-                if node[0] == (grid_columns-1):
-                    is_edge_right = True
-                else:
-                    is_edge_right = False
-            else:
-                is_edge_right = False
-
-        elif direction == "SOUTH":
-            if node_value == "top_left":
-                if node[0] == 0:
-                    is_edge_right = True
-                else:
-                    is_edge_right = False
-
-            elif node_value == "bottom_left":
-                if node[0] == 0:
-                    is_edge_right = True
-                else:
-                    is_edge_right = False
-            else:
-                is_edge_right = False
-
-        if direction == "EAST":
-            if node_value == "bottom_left":
-                if node[1] == (grid_rows-1):
-                    is_edge_right = True
-                else:
-                    is_edge_right = False
-
-            elif node_value == "bottom_right":
-                if node[1] == (grid_rows-1):
-                    is_edge_right = True
-                else:
-                    is_edge_right = False
-            else:
-                is_edge_right = False
-
-        if direction == "WEST":
-            if node_value == "top_left":
-                if node[1] == 0:
-                    is_edge_right = True
-                else:
-                    is_edge_right = False
-
-            elif node_value == "top_right":
-                if node[1] == 0:
-                    is_edge_right = True
-                else:
-                    is_edge_right = False
-            else:
-                is_edge_right = False
-
-        return is_edge_right
-
-    def is_edge_infront(self, grid_columns, grid_rows, direction, node):
-        # Retrieve where the node is in the cell is
-        if node[0] % 2 == 0 and node[1] % 2 == 0:
-            node_value = "top_left"
-        elif node[0] % 2 == 1 and node[1] % 2 == 0:
-            node_value = "top_right"
-        elif node[0] % 2 == 0 and node[1] % 2 == 1:
-            node_value = "bottom_left"
-        else:
-            node_value = "bottom_right"
-
-        if direction == "NORTH":
-            if node_value == "top_left":
-                if node[1] == 0:
-                    is_edge_infront = True
-                else:
-                    is_edge_infront = False
-
-            elif node_value == "top_right":
-                if node[1] == 0:
-                    is_edge_infront = True
-                else:
-                    is_edge_infront = False
-            else:
-                is_edge_infront = False
-
-        elif direction == "SOUTH":
-            if node_value == "bottom_left":
-                if node[1] == (grid_rows-1):
-                    is_edge_infront = True
-                else:
-                    is_edge_infront = False
-
-            elif node_value == "bottom_right":
-                if node[1] == (grid_rows-1):
-                    is_edge_infront = True
-                else:
-                    is_edge_infront = False
-            else:
-                is_edge_infront = False
-
-        if direction == "EAST":
-            if node_value == "top_right":
-                if node[0] == (grid_columns-1):
-                    is_edge_infront = True
-                else:
-                    is_edge_infront = False
-
-            elif node_value == "bottom_right":
-                if node[0] == (grid_columns-1):
-                    is_edge_infront = True
-                else:
-                    is_edge_infront = False
-            else:
-                is_edge_infront = False
-
-        if direction == "WEST":
-            if node_value == "top_left":
-                if node[0] == (grid_columns-1):
-                    is_edge_infront = True
-                else:
-                    is_edge_infront = False
-
-            elif node_value == "bottom_left":
-                if node[0] == (grid_columns-1):
-                    is_edge_infront = True
-                else:
-                    is_edge_infront = False
-            else:
-                is_edge_infront = False
-
-        return is_edge_infront
-
-    def generate_path(self, maze):
-        # Get grid cols/rows
-        grid_columns = self.grid_columns
-        grid_rows = self.grid_rows
-
-        # Get node number (should be double the number of "cells" in the initial prim maze)
-        node_number = (grid_columns*grid_rows)
-
-        # Initialise path as empty list to start with
-        path = [(0, 0), (1, 0)]
-
-        # Start at cell (0, 0)
-        cell = (0, 0)
-
-        # Start in node (top_left)
-        node = (1, 0)
-
-        # Head east to begin with
-        direction = "EAST"
-
-        while(len(path) < node_number):
-
-            # Always try to go right first
-            if self.can_go_right(maze, direction, cell, node, grid_columns, grid_rows):
-                # Go to the node to the right depending on the direction
-                new_node = (node[0]+self.direction_movement_definitions[direction]["right"]["x"],
-                            node[1]+self.direction_movement_definitions[direction]["right"]["y"])
-
-                # Change direction if we've gone right
-                direction = self.direction_change_definitions[direction]["right"]
-
-            # If we can't go right, try to go forward next
-            elif self.can_go_forward(maze, direction, cell, node, grid_columns, grid_rows):
-                # Go to the node in front depending on the direction
-                new_node = (node[0]+self.direction_movement_definitions[direction]["forward"]["x"],
-                            node[1]+self.direction_movement_definitions[direction]["forward"]["y"])
-
-            # If we can't go right or forward we can only go left
-            else:
-                # Go to the node to the left depending on the direction
-                new_node = (node[0]+self.direction_movement_definitions[direction]["left"]["x"],
-                            node[1]+self.direction_movement_definitions[direction]["left"]["y"])
-
-                # Change direction if we've gone left
-                direction = self.direction_change_definitions[direction]["left"]
-
-            # Add the new node to the path
-            path.append(new_node)
-
-            # Determine the cell we're now in depending on the node
-            cell = (int(new_node[0]/2), int(new_node[1]/2))
-
-            # Move to the new node and start the process over again
-            node = new_node
-
-        return path
-
-
-class a_star_node(object):
-    def __init__(self, position, parent=None):
-        self.g = 0
-        self.h = 0
-        self.f = 0
-        self.parent = parent
-        self.position = [position[0], position[1]]
-
-    def __eq__(self, other):
-        return self.position == other.position
-
-    def __repr__(self):
-        return f"{self.position} - g: {self.g} h: {self.h} f: {self.f}"
-
-    # defining less than for purposes of heap queue
-    def __lt__(self, other):
-        return self.f < other.f
-
-    # defining greater than for purposes of heap queue
-    def __gt__(self, other):
-        return self.f > other.f
-
-
 class button_rect(object):
     def __init__(self, text,  pos, font_size, background_colour, text_colour):
         self.x, self.y = pos
-        self.font = pygame.font.SysFont("RobotoCondensed-Bold.ttf", font_size)
+        self.font = pygame.font.SysFont(
+            "fonts/RobotoCondensed-Bold.ttf", font_size)
         self.set_text(text, background_colour, text_colour)
 
     def set_text(self, text, background_colour, text_colour):
         self.text = self.font.render(text, 1, text_colour)
         self.size = self.text.get_size()
         surface_size = (95, 27)
-        print(surface_size)
         self.surface = pygame.Surface(surface_size)
         self.surface.fill(background_colour)
         self.text_rect = self.text.get_rect(
@@ -796,191 +257,10 @@ class button_rect(object):
 
 #-----------------------CLASSES-----------------------#
 
-#-----------------------AI FUNCTIONS------------------#
-
-
-def a_star_path(start, target, grid_columns, grid_rows, snake_positions):
-    # Create a start node and a target node the specified node in the grid
-    start_node = a_star_node(start)
-    target = a_star_node(target)
-
-    # Initialize the node open and closed list, add start_node to open list to begin with
-    node_open_list = []
-    node_closed_list = []
-
-    # Heapify the node_open_list
-    heapq.heapify(node_open_list)
-    heapq.heappush(node_open_list, start_node)
-
-    # Set a limit on the path_finding - if we reach this then break out and don't return a path
-    max_iterations = ((GRID_HEIGHT*GRID_WIDTH))
-    iteration_number = 0
-
-    # Loop until you find the end
-    while len(node_open_list) > 0 and iteration_number < max_iterations:
-        iteration_number += 1
-
-        # Get the current node
-        current_node = heapq.heappop(node_open_list)
-        node_closed_list.append(current_node)
-
-        # If we've reached our target, return the path
-        if current_node == target:
-            print("FOUND A PATH")
-            path = []
-            current = current_node
-            while current is not None:
-                path.append(current.position)
-                current = current.parent
-            return path[::-1]  # Return reversed path
-
-        # Generating the children of the current node
-        children = []
-        # Adjacent squares in the context of the snake game
-        adjacent_positions = [(0, -1), (0, 1), (-1, 0), (1, 0)]
-
-        for new_position in adjacent_positions:
-            # Get the node position
-            node_position = [
-                current_node.position[0] + new_position[0], current_node.position[1] + new_position[1]]
-
-            # Ensure we're not going past the edge of the snake grid
-            if(node_position[0] > (grid_columns-1) or node_position[0] < 0 or node_position[1] > (grid_rows-1) or node_position[1] < 0):
-                continue  # Skip the iteration
-
-            # Ensure we're not in the body/tail
-            if node_position in snake_positions:
-                continue
-
-            # Create a new node
-            new_node = a_star_node(node_position, current_node)
-
-            # Add it to the children
-            children.append(new_node)
-
-        # Loop through the children and add them to the node_open_list if not already in it
-        for child in children:
-            # If child is on the node closed list then skip
-            if child in node_closed_list:
-                continue
-            # Otherwise create the f, g and h values of the child
-            child.g = current_node.g + 1
-            child.h = (abs(child.position[0] - target.position[0]) +
-                       abs(child.position[1] - target.position[1]))
-            child.f = child.g + child.h
-
-            # If the child is already in the open node list and has a greater g value then skip
-            for open_node in node_open_list:
-                if child == open_node and child.g >= open_node.g:
-                    continue
-
-            # Otherwise add the child to the node open list
-            heapq.heappush(node_open_list, child)
-
-    print("Couldn't find a path")
-    return None
-
-
-def find_adjacent_nodes(node, grid_rows, grid_columns, snake_positions):
-    adjacent_nodes = []
-    # print("NODE IS: " + str(node))
-    # Adjacent squares in the context of the snake game
-    adjacent_positions = [(0, -1), (0, 1), (-1, 0), (1, 0)]
-    for new_position in adjacent_positions:
-        node_position = [node[0] + new_position[0], node[1] + new_position[1]]
-        # Ensure we're not going past the edge of the snake grid
-        if(node_position[0] > (grid_columns-1) or node_position[0] < 0 or node_position[1] > (grid_rows-1) or node_position[1] < 0):
-            continue  # Skip the iteration
-        # Ensure we're not in the body/tail
-        if node_position in snake_positions:
-            continue
-
-        adjacent_nodes.append(node_position)
-
-    return adjacent_nodes
-
-
-#-----------------------AI FUNCTIONS------------------#
-
-
-#---------------------HELPER FUNCTIONS----------------#
-
-def fill_screen(screen, colour):
-    screen.fill(colour)
-
-
-def draw_grid(screen):
-    # Fill window with light green to start with (for light green squares)
-    screen.fill((LIGHT_GREEN))
-    # Initialise Grassy Grid
-    for column in range(int(GRID_HEIGHT)):
-        if column % 2 == 0:
-            for row in range(int(GRID_WIDTH)):
-                grid_rect = pygame.Rect(
-                    (row * GRID_SIZE), (column * GRID_SIZE), GRID_SIZE, GRID_SIZE)
-                if (row % 2) == 0:
-                    pygame.draw.rect(screen, GREEN, grid_rect)
-        else:
-            for row in range(int(GRID_WIDTH)):
-                grid_rect = pygame.Rect(
-                    (row * GRID_SIZE), (column * GRID_SIZE), GRID_SIZE, GRID_SIZE)
-                if (row % 2) != 0:
-                    pygame.draw.rect(screen, GREEN, grid_rect)
-
-
-def create_text(text_to_write, font_size, x, y, colour=GREY):
-    # Define Roboto Font
-    roboto_font = pygame.font.Font("RobotoCondensed-Bold.ttf", font_size)
-    # Render text
-    text = roboto_font.render(text_to_write, 1, colour)
-    text_rect = text.get_rect(center=(x, y))
-    return text, text_rect
-
-
-def renderTextCenteredAt(text, fontsize, colour, x, y, screen, allowed_width):
-    # first, split the text into words
-    words = text.split()
-
-    roboto_font = pygame.font.Font("RobotoCondensed-Bold.ttf", fontsize)
-
-    # now, construct lines out of these words
-    lines = []
-    while len(words) > 0:
-        # get as many words as will fit within allowed_width
-        line_words = []
-        while len(words) > 0:
-            line_words.append(words.pop(0))
-            fw, fh = roboto_font.size(' '.join(line_words + words[:1]))
-            if fw > allowed_width:
-                break
-
-        # add a line consisting of those words
-        line = ' '.join(line_words)
-        lines.append(line)
-
-    # now we've split our text into lines that fit into the width, actually
-    # render them
-
-    # we'll render each line below the last, so we need to keep track of
-    # the culmative height of the lines we've rendered so far
-    y_offset = 0
-    for line in lines:
-        fw, fh = roboto_font.size(line)
-
-        # (tx, ty) is the top-left of the font surface
-        tx = x - fw / 2
-        ty = y + y_offset
-
-        font_surface = roboto_font.render(line, True, colour)
-        screen.blit(font_surface, (tx, ty))
-
-        y_offset += fh
-
-#---------------------HELPER FUNCTIONS----------------#
-
 #-----------------------CONTROL FLOW FUNCTIONS-----------------------#
 
 
+# Main Menu Screen
 def main_menu():
     # Initialise clock object
     clock = pygame.time.Clock()
@@ -1063,6 +343,209 @@ def main_menu():
         pygame.display.update()
 
 
+# Options Screen
+def options():
+    # Initialise clock object
+    clock = pygame.time.Clock()
+
+    # Difficulty Buttons
+    easy_button = button_rect(
+        "EASY", (225, (SCREEN_HEIGHT/4)+27), 25, GREY, BLACK)
+    medium_button = button_rect(
+        "MEDIUM", (350, (SCREEN_HEIGHT/4)+27), 25, GREY, BLACK)
+    hard_button = button_rect(
+        "HARD", (475, (SCREEN_HEIGHT/4)+27), 25, GREY, BLACK)
+
+    # AI Algorithm Selection Buttons
+    simple_button = button_rect(
+        "SIMPLE", (225, (SCREEN_HEIGHT/4)+107), 25, GREY, BLACK)
+    pertubated_button = button_rect(
+        "PERTUBATED", (350, (SCREEN_HEIGHT/4)+107), 20, GREY, BLACK)
+    improved_a_star_button = button_rect(
+        "IMPROVED", (475, (SCREEN_HEIGHT/4)+107), 25, GREY, BLACK)
+
+    # Speed Buttons
+    slow_speed_button = button_rect(
+        "SLOW", (225, (SCREEN_HEIGHT/4)+187), 25, GREY, BLACK)
+    medium_speed_button = button_rect(
+        "MEDIUM", (350, (SCREEN_HEIGHT/4)+187), 25, GREY, BLACK)
+    fast_speed_button = button_rect(
+        "FAST", (475, (SCREEN_HEIGHT/4)+187), 25, GREY, BLACK)
+
+    # Main Menu Loop
+    run = True
+    while run:
+        # Set currently selected options
+        # DIFFICULTY
+        if DIFFICULTY == "EASY":
+            easy_button.set_text("EASY", DARK_GREY, GREY)
+            medium_button.set_text("MEDIUM", GREY, BLACK)
+            hard_button.set_text("HARD", GREY, BLACK)
+        elif DIFFICULTY == "MEDIUM":
+            easy_button.set_text("EASY", GREY, BLACK)
+            medium_button.set_text("MEDIUM", DARK_GREY, GREY)
+            hard_button.set_text("HARD", GREY, BLACK)
+        elif DIFFICULTY == "HARD":
+            easy_button.set_text("EASY", GREY, BLACK)
+            medium_button.set_text("MEDIUM", GREY, BLACK)
+            hard_button.set_text("HARD", DARK_GREY, GREY)
+        # ALGORITHM
+        if AI_PLAY == "SIMPLE":
+            simple_button.set_text("SIMPLE", DARK_GREY, GREY)
+            pertubated_button.set_text("PERTUBATED", GREY, BLACK)
+            improved_a_star_button.set_text("IMPROVED", GREY, BLACK)
+        elif AI_PLAY == "PERTUBATED":
+            simple_button.set_text("SIMPLE", GREY, BLACK)
+            pertubated_button.set_text("PERTUBATED", DARK_GREY, GREY)
+            improved_a_star_button.set_text("IMPROVED", GREY, BLACK)
+        elif AI_PLAY == "IMPROVED":
+            simple_button.set_text("SIMPLE", GREY, BLACK)
+            pertubated_button.set_text("PERTUBATED", GREY, BLACK)
+            improved_a_star_button.set_text("IMPROVED", DARK_GREY, GREY)
+        # SPEED
+        if SPEED == "SLOW":
+            slow_speed_button.set_text("SLOW", DARK_GREY, GREY)
+            medium_speed_button.set_text("MEDIUM", GREY, BLACK)
+            fast_speed_button.set_text("FAST", GREY, BLACK)
+        elif SPEED == "MEDIUM":
+            slow_speed_button.set_text("SLOW", GREY, BLACK)
+            medium_speed_button.set_text("MEDIUM", DARK_GREY, GREY)
+            fast_speed_button.set_text("FAST", GREY, BLACK)
+        elif SPEED == "FAST":
+            slow_speed_button.set_text("SLOW", GREY, BLACK)
+            medium_speed_button.set_text("MEDIUM", GREY, BLACK)
+            fast_speed_button.set_text("FAST", DARK_GREY, GREY)
+
+        # Check for events
+        for event in pygame.event.get():
+            # Check for exit
+            if event.type == pygame.QUIT:
+                run = False
+                pygame.quit()
+                sys.exit()
+            # Check for mouse clicking
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:
+                    if back_button_image.get_rect().collidepoint(event.pos):
+                        main_menu()
+
+            # Difficulty Button Clicked
+            easy_button.click(event, "DIFFICULTY", "EASY")
+            medium_button.click(event, "DIFFICULTY", "MEDIUM")
+            hard_button.click(event, "DIFFICULTY", "HARD")
+
+            # Algorithm Button Clicked
+            simple_button.click(event, "ALGORITHM", "SIMPLE")
+            pertubated_button.click(event, "ALGORITHM", "PERTUBATED")
+            improved_a_star_button.click(event, "ALGORITHM", "IMPROVED")
+
+            # Speed Button Clicked
+            slow_speed_button.click(event, "SPEED", "SLOW")
+            medium_speed_button.click(event, "SPEED", "MEDIUM")
+            fast_speed_button.click(event, "SPEED", "FAST")
+
+        # Fill Background
+        fill_screen(WINDOW, GREEN)
+
+        # Draw Side Line
+        line_x = (50)
+        line_y = (SCREEN_HEIGHT/8)+75
+        pygame.draw.line(WINDOW, GREY, (line_x, line_y),
+                         (line_x, line_y+(SCREEN_HEIGHT-(SCREEN_HEIGHT/2)-50)), 2)
+
+        # Draw Back Button
+        back_button_x = 50
+        back_button_y = 35
+        WINDOW.blit(back_button_image, (back_button_x, back_button_y))
+
+        # Draw Text
+        # Title Text
+        snake_text, snake_text_rect = create_text(
+            "OPTIONS    ", 40, (SCREEN_WIDTH/2), (SCREEN_HEIGHT/8))
+        WINDOW.blit(snake_text, snake_text_rect)
+
+        # Difficulty Text
+        snake_text, snake_text_rect = create_text(
+            "Difficulty:", 20, (SCREEN_WIDTH/4), (SCREEN_HEIGHT/4) + 40)
+        WINDOW.blit(snake_text, snake_text_rect)
+
+        # AI Option Text
+        snake_text, snake_text_rect = create_text(
+            "AI Algorithm:", 20, (SCREEN_WIDTH/4), (SCREEN_HEIGHT/4) + 120)
+        WINDOW.blit(snake_text, snake_text_rect)
+
+        # Speed Option Text
+        snake_text, snake_text_rect = create_text(
+            "Snake Speed:", 20, (SCREEN_WIDTH/4), (SCREEN_HEIGHT/4) + 200)
+        WINDOW.blit(snake_text, snake_text_rect)
+
+        # Show Difficulty Buttons
+        easy_button.show()
+        medium_button.show()
+        hard_button.show()
+
+        # Show AI Algorithm Selection Buttons
+        simple_button.show()
+        pertubated_button.show()
+        improved_a_star_button.show()
+
+        # Show Speed Buttons
+        slow_speed_button.show()
+        medium_speed_button.show()
+        fast_speed_button.show()
+
+        clock.tick(FPS)
+        pygame.display.update()
+
+
+# More Information Screen
+def more_info():
+    # Initialise clock object
+    clock = pygame.time.Clock()
+    # Main Menu Loop
+    run = True
+    while run:
+        # Check for events
+        for event in pygame.event.get():
+            # Check for exit
+            if event.type == pygame.QUIT:
+                run = False
+                pygame.quit()
+                sys.exit()
+            # Check for mouse clicking
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:
+                    if back_button_image.get_rect().collidepoint(event.pos):
+                        main_menu()
+
+        # Fill Background
+        fill_screen(WINDOW, GREEN)
+
+        # Draw Side Line
+        line_x = (25)
+        line_y = (SCREEN_HEIGHT/8)+50
+        pygame.draw.line(WINDOW, GREY, (line_x, line_y),
+                         (line_x, line_y+(SCREEN_HEIGHT-(SCREEN_HEIGHT/4)-50)), 2)
+
+        # Draw Back Button
+        back_button_x = 50
+        back_button_y = 35
+        WINDOW.blit(back_button_image, (back_button_x, back_button_y))
+
+        # Draw Text
+        # Title Text
+        snake_text, snake_text_rect = create_text(
+            "INFORMATION", 40, (SCREEN_WIDTH/2), (SCREEN_HEIGHT/8))
+        WINDOW.blit(snake_text, snake_text_rect)
+
+        renderTextCenteredAt("This game of snake is the work for a final year project at the University of Liverpool and has been created by the student Joe Moore. The game can be played manually by the player or a specially designed AI algorithm can play the “perfect” game for you. The difficulty can be increased or decreased by increasing or decreasing the size of the board in the options menu.",
+                             30, GREY, (SCREEN_WIDTH/2), (SCREEN_HEIGHT/8)+75, WINDOW, SCREEN_WIDTH-100)
+
+        clock.tick(FPS)
+        pygame.display.update()
+
+
+# Manual Play Game
 def manual_play():
     # Initialise game class for manual play
     manual_play_game = game("MANUAL PLAY")
@@ -1102,9 +585,8 @@ def manual_play():
         clock.tick(FPS)
         clock.tick(SNAKE_SPEED)
 
-# Simple Hamiltonian
 
-
+# Simple Hamiltonian AI Play (PERFECT)
 def ai_play_simple_hamiltonian():
     # Initialise the maze and the path the snake is going to follow
     maze_object = maze(GRID_HEIGHT/2, GRID_WIDTH/2)
@@ -1193,9 +675,8 @@ def ai_play_simple_hamiltonian():
         clock.tick(FPS)
         clock.tick(SNAKE_SPEED)
 
-# Pertubated Hamiltonian
 
-
+# Pertubated Hamiltonian AI Play (PERFECT)
 def ai_play_pertubated_hamiltonian():
     # Initialise the maze and the path the snake is going to follow
     maze_object = maze(GRID_HEIGHT/2, GRID_WIDTH/2)
@@ -1354,6 +835,7 @@ def ai_play_pertubated_hamiltonian():
         clock.tick(SNAKE_SPEED)
 
 
+# Improved A Star Hamiltonian AI Play (CAN FAIL)
 def ai_play_improved_a_star_hamiltonian():
     # Initialise the maze and the path the snake is going to follow
     maze_object = maze(GRID_HEIGHT/2, GRID_WIDTH/2)
@@ -1590,209 +1072,6 @@ def ai_play_improved_a_star_hamiltonian():
         pygame.display.update()
         clock.tick(FPS)
         clock.tick(SNAKE_SPEED)
-
-
-def options():
-    # Initialise clock object
-    clock = pygame.time.Clock()
-
-    # Difficulty Buttons
-    difficulty_selected = "MEDIUM"
-    easy_button = button_rect(
-        "EASY", (225, (SCREEN_HEIGHT/4)+27), 25, GREY, BLACK)
-    medium_button = button_rect(
-        "MEDIUM", (350, (SCREEN_HEIGHT/4)+27), 25, GREY, BLACK)
-    hard_button = button_rect(
-        "HARD", (475, (SCREEN_HEIGHT/4)+27), 25, GREY, BLACK)
-
-    # AI Algorithm Selection Buttons
-    algorithm_selected = "SIMPLE"
-    simple_button = button_rect(
-        "SIMPLE", (225, (SCREEN_HEIGHT/4)+107), 25, GREY, BLACK)
-    pertubated_button = button_rect(
-        "PERTUBATED", (350, (SCREEN_HEIGHT/4)+107), 20, GREY, BLACK)
-    improved_a_star_button = button_rect(
-        "IMPROVED", (475, (SCREEN_HEIGHT/4)+107), 25, GREY, BLACK)
-
-    # Speed Buttons
-    speed_selected = "MEDIUM"
-    slow_speed_button = button_rect(
-        "SLOW", (225, (SCREEN_HEIGHT/4)+187), 25, GREY, BLACK)
-    medium_speed_button = button_rect(
-        "MEDIUM", (350, (SCREEN_HEIGHT/4)+187), 25, GREY, BLACK)
-    fast_speed_button = button_rect(
-        "FAST", (475, (SCREEN_HEIGHT/4)+187), 25, GREY, BLACK)
-
-    # Main Menu Loop
-    run = True
-    while run:
-        # Set currently selected options
-        # DIFFICULTY
-        if DIFFICULTY == "EASY":
-            easy_button.set_text("EASY", DARK_GREY, GREY)
-            medium_button.set_text("MEDIUM", GREY, BLACK)
-            hard_button.set_text("HARD", GREY, BLACK)
-        elif DIFFICULTY == "MEDIUM":
-            easy_button.set_text("EASY", GREY, BLACK)
-            medium_button.set_text("MEDIUM", DARK_GREY, GREY)
-            hard_button.set_text("HARD", GREY, BLACK)
-        elif DIFFICULTY == "HARD":
-            easy_button.set_text("EASY", GREY, BLACK)
-            medium_button.set_text("MEDIUM", GREY, BLACK)
-            hard_button.set_text("HARD", DARK_GREY, GREY)
-        # ALGORITHM
-        if AI_PLAY == "SIMPLE":
-            simple_button.set_text("SIMPLE", DARK_GREY, GREY)
-            pertubated_button.set_text("PERTUBATED", GREY, BLACK)
-            improved_a_star_button.set_text("IMPROVED", GREY, BLACK)
-        elif AI_PLAY == "PERTUBATED":
-            simple_button.set_text("SIMPLE", GREY, BLACK)
-            pertubated_button.set_text("PERTUBATED", DARK_GREY, GREY)
-            improved_a_star_button.set_text("IMPROVED", GREY, BLACK)
-        elif AI_PLAY == "IMPROVED":
-            simple_button.set_text("SIMPLE", GREY, BLACK)
-            pertubated_button.set_text("PERTUBATED", GREY, BLACK)
-            improved_a_star_button.set_text("IMPROVED", DARK_GREY, GREY)
-        # SPEED
-        if SPEED == "SLOW":
-            slow_speed_button.set_text("SLOW", DARK_GREY, GREY)
-            medium_speed_button.set_text("MEDIUM", GREY, BLACK)
-            fast_speed_button.set_text("FAST", GREY, BLACK)
-        elif SPEED == "MEDIUM":
-            slow_speed_button.set_text("SLOW", GREY, BLACK)
-            medium_speed_button.set_text("MEDIUM", DARK_GREY, GREY)
-            fast_speed_button.set_text("FAST", GREY, BLACK)
-        elif SPEED == "FAST":
-            slow_speed_button.set_text("SLOW", GREY, BLACK)
-            medium_speed_button.set_text("MEDIUM", GREY, BLACK)
-            fast_speed_button.set_text("FAST", DARK_GREY, GREY)
-
-        # Check for events
-        for event in pygame.event.get():
-            # Check for exit
-            if event.type == pygame.QUIT:
-                run = False
-                pygame.quit()
-                sys.exit()
-            # Check for mouse clicking
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                if event.button == 1:
-                    if back_button_image.get_rect().collidepoint(event.pos):
-                        main_menu()
-
-            # Difficulty Button Clicked
-            easy_button.click(event, "DIFFICULTY", "EASY")
-            medium_button.click(event, "DIFFICULTY", "MEDIUM")
-            hard_button.click(event, "DIFFICULTY", "HARD")
-
-            # Algorithm Button Clicked
-            simple_button.click(event, "ALGORITHM", "SIMPLE")
-            pertubated_button.click(event, "ALGORITHM", "PERTUBATED")
-            improved_a_star_button.click(event, "ALGORITHM", "IMPROVED")
-
-            # Speed Button Clicked
-            slow_speed_button.click(event, "SPEED", "SLOW")
-            medium_speed_button.click(event, "SPEED", "MEDIUM")
-            fast_speed_button.click(event, "SPEED", "FAST")
-
-        # Fill Background
-        fill_screen(WINDOW, GREEN)
-
-        # Draw Side Line
-        line_x = (50)
-        line_y = (SCREEN_HEIGHT/8)+75
-        pygame.draw.line(WINDOW, GREY, (line_x, line_y),
-                         (line_x, line_y+(SCREEN_HEIGHT-(SCREEN_HEIGHT/2)-50)), 2)
-
-        # Draw Back Button
-        back_button_x = 50
-        back_button_y = 35
-        WINDOW.blit(back_button_image, (back_button_x, back_button_y))
-
-        # Draw Text
-        # Title Text
-        snake_text, snake_text_rect = create_text(
-            "OPTIONS    ", 40, (SCREEN_WIDTH/2), (SCREEN_HEIGHT/8))
-        WINDOW.blit(snake_text, snake_text_rect)
-
-        # Difficulty Text
-        snake_text, snake_text_rect = create_text(
-            "Difficulty:", 20, (SCREEN_WIDTH/4), (SCREEN_HEIGHT/4) + 40)
-        WINDOW.blit(snake_text, snake_text_rect)
-
-        # AI Option Text
-        snake_text, snake_text_rect = create_text(
-            "AI Algorithm:", 20, (SCREEN_WIDTH/4), (SCREEN_HEIGHT/4) + 120)
-        WINDOW.blit(snake_text, snake_text_rect)
-
-        # Speed Option Text
-        snake_text, snake_text_rect = create_text(
-            "Snake Speed:", 20, (SCREEN_WIDTH/4), (SCREEN_HEIGHT/4) + 200)
-        WINDOW.blit(snake_text, snake_text_rect)
-
-        # Show Difficulty Buttons
-        easy_button.show()
-        medium_button.show()
-        hard_button.show()
-
-        # Show AI Algorithm Selection Buttons
-        simple_button.show()
-        pertubated_button.show()
-        improved_a_star_button.show()
-
-        # Show Speed Buttons
-        slow_speed_button.show()
-        medium_speed_button.show()
-        fast_speed_button.show()
-
-        clock.tick(FPS)
-        pygame.display.update()
-
-
-def more_info():
-    # Initialise clock object
-    clock = pygame.time.Clock()
-    # Main Menu Loop
-    run = True
-    while run:
-        # Check for events
-        for event in pygame.event.get():
-            # Check for exit
-            if event.type == pygame.QUIT:
-                run = False
-                pygame.quit()
-                sys.exit()
-            # Check for mouse clicking
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                if event.button == 1:
-                    if back_button_image.get_rect().collidepoint(event.pos):
-                        main_menu()
-
-        # Fill Background
-        fill_screen(WINDOW, GREEN)
-
-        # Draw Side Line
-        line_x = (25)
-        line_y = (SCREEN_HEIGHT/8)+50
-        pygame.draw.line(WINDOW, GREY, (line_x, line_y),
-                         (line_x, line_y+(SCREEN_HEIGHT-(SCREEN_HEIGHT/4)-50)), 2)
-
-        # Draw Back Button
-        back_button_x = 50
-        back_button_y = 35
-        WINDOW.blit(back_button_image, (back_button_x, back_button_y))
-
-        # Draw Text
-        # Title Text
-        snake_text, snake_text_rect = create_text(
-            "INFORMATION", 40, (SCREEN_WIDTH/2), (SCREEN_HEIGHT/8))
-        WINDOW.blit(snake_text, snake_text_rect)
-
-        renderTextCenteredAt("This game of snake is the work for a final year project at the University of Liverpool and has been created by the student Joe Moore. The game can be played manually by the player or a specially designed AI algorithm can play the “perfect” game for you. The difficulty can be increased or decreased by increasing or decreasing the size of the board in the options menu.",
-                             30, GREY, (SCREEN_WIDTH/2), (SCREEN_HEIGHT/8)+75, WINDOW, SCREEN_WIDTH-100)
-
-        clock.tick(FPS)
-        pygame.display.update()
 
 
 # Call Main Menu Function to begin the game
