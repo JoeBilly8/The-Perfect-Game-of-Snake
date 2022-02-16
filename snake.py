@@ -21,17 +21,14 @@ from snake_ai_functions.prim_maze import maze
 from snake_ai_functions.generate_path import path
 from snake_helper_functions.helper import *
 
-#---------------------LOAD IMAGES---------------------#
-back_button_image = pygame.transform.scale(
-    pygame.image.load('images/BackButton.png'), (100, 75))
-
-
 #---------------------DEFINE COLOUR SCHEME---------------------#
 # Colour Scheme From Design
 GREEN = pygame.Color("#476930")
 LIGHT_GREEN = pygame.Color("#477830")
 BACKGROUND_GREEN = pygame.Color("#47B430")
 GREY = pygame.Color("#D3D3D3")
+LIGHT_GREY = pygame.Color("#C4C4C4")
+MEDIUM_GREY = pygame.Color("#A8A8A8")
 DARK_GREY = pygame.Color("#545454")
 RED = pygame.Color("#930000")
 BLACK = pygame.Color("#000000")
@@ -63,12 +60,21 @@ GRID_SIZE = DIFFICULTY_DICT[DIFFICULTY]
 # Setup Grid
 GRID_WIDTH = (SCREEN_WIDTH/GRID_SIZE)
 GRID_HEIGHT = (SCREEN_HEIGHT/GRID_SIZE)
-
-
 #-----------------------INITIALISATION-----------------------#
 
 
+#---------------------LOAD IMAGES---------------------#
+back_button_image = pygame.transform.scale(
+    pygame.image.load('images/BackButton.png'), (100, 75)).convert_alpha()
+apple_image = pygame.transform.scale(pygame.image.load(
+    'images/Apple.png'), (GRID_SIZE, GRID_SIZE)).convert_alpha()
+snake_head_image = pygame.transform.scale(pygame.image.load(
+    'images/SnakeHead.png'), (GRID_SIZE, GRID_SIZE)).convert_alpha()
+
+
 #-----------------------CLASSES-----------------------#
+
+
 class snake():
     # Snake movement directional definitions
     up = [0, -1]
@@ -87,7 +93,10 @@ class snake():
         for pos in self.positions:
             snake_block = pygame.Rect(
                 (pos[0]*(GRID_SIZE)), (pos[1]*(GRID_SIZE)), GRID_SIZE, GRID_SIZE)
-            pygame.draw.rect(screen, GREY, snake_block)
+            if pos == self.positions[0]:
+                screen.blit(snake_head_image, snake_block)
+            else:
+                pygame.draw.rect(screen, LIGHT_GREY, snake_block)
 
     def move(self):
         new_positions = self.positions[:-1]
@@ -112,7 +121,8 @@ class apple(object):
     def draw(self, screen):
         apple_rect = pygame.Rect((self.x * GRID_SIZE),
                                  (self.y * GRID_SIZE), GRID_SIZE, GRID_SIZE)
-        pygame.draw.rect(screen, RED, apple_rect)
+        screen.blit(apple_image, apple_rect)
+        # pygame.draw.rect(screen, RED, apple_rect)
 
     def randomise_pos(self, snake_body):
         self.x = random.randint(0, (GRID_WIDTH-1))
@@ -242,10 +252,17 @@ class button_rect(object):
                         global GRID_SIZE
                         global GRID_WIDTH
                         global GRID_HEIGHT
+                        global apple_image
+                        global snake_head_image
                         DIFFICULTY = setting_value
                         GRID_SIZE = DIFFICULTY_DICT[DIFFICULTY]
                         GRID_WIDTH = (SCREEN_WIDTH/GRID_SIZE)
                         GRID_HEIGHT = (SCREEN_HEIGHT/GRID_SIZE)
+                        # Reload apple and head image for size of grid
+                        apple_image = pygame.transform.scale(pygame.image.load(
+                            'images/Apple.png'), (GRID_SIZE, GRID_SIZE)).convert_alpha()
+                        snake_head_image = pygame.transform.scale(pygame.image.load(
+                            'images/SnakeHead.png'), (GRID_SIZE, GRID_SIZE)).convert_alpha()
                     elif setting == "ALGORITHM":
                         global AI_PLAY
                         AI_PLAY = setting_value
