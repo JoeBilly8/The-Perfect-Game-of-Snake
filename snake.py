@@ -2,15 +2,14 @@
 # TO DO:
 # 1) Fix game labels
 # 2) Unit Tests
-# 3) Implement A* Improved Pertubated Hamiltonian (need a survival mode for early A* paths)
-# 4) Go through and descriptively comment code (particularly AI functions)
-# 5) Do a testing cycle to collect lots of runs of data
-# 6) Add a
-# 7) Add a gameover page with score, time, sounds
-# 8) Credits page?
+# 3) Go through and descriptively comment code (particularly AI functions)
+# 4) Do a testing cycle to collect lots of runs of data
+# 5) Add a gameover page with score, time, sounds
+# 6) Do full rename of pertubated to improved, and improved to A* Risk
 
 
 #-----------------------IMPORTS-----------------------#
+import csv
 import time
 import pygame
 import sys
@@ -1125,5 +1124,16 @@ def ai_play_improved_a_star_hamiltonian():
         clock.tick(SNAKE_SPEED)
 
 
-# Call Main Menu Function to begin the game
+# Testing cycle function - runs a chosen algorithm on a loop, recording the stats for each game
+def testing_cycle():
+    # Set the number of cycles we want to run
+    cycles = 100
+    count = 0
+    # Create the csv writer
+    writer = csv.writer(file)
+
+    while count < cycles:
+        pass
+
+        # Call Main Menu Function to begin the game
 main_menu()
