@@ -1,7 +1,7 @@
 # Use this file to change the settings of the snake game (can also be done via the options menu in-game)
 
 # Settings
-AI_PLAY = "IMPROVED"
+AI_PLAY = "RISK"  # SIMPLE, IMPROVED, RISK
 # Speed and difficulty are defined with a dictionary so the button functions are more descriptive
 SPEED_DICT = {"SLOW": 10, "MEDIUM": 25, "FAST": 50}
 SPEED = "FAST"

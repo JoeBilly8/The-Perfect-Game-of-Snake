@@ -1,5 +1,3 @@
-
-
 # Imports
 import csv
 import sys
@@ -59,7 +57,8 @@ def testing_cycle():
 
         count += 1
 
-    filename = ("snake_testing_" + test + "_" + difficulty + ".csv")
+    filename = ("testing_data/snake_testing_" +
+                test + "_" + difficulty + ".csv")
     # Write the collected data to our csv file
     with open(filename, 'w', encoding='UTF8', newline='') as f:
         writer = csv.writer(f)
