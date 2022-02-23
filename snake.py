@@ -320,8 +320,8 @@ def main_menu():
                         print("AI PLAY PRESSED")
                         if AI_PLAY == "SIMPLE":
                             ai_play_simple_hamiltonian()
-                        elif AI_PLAY == "PERTUBATED":
-                            ai_play_pertubated_hamiltonian()
+                        elif AI_PLAY == "IMPROVED":
+                            ai_play_improved_hamiltonian()
                         elif AI_PLAY == "IMPROVED":
                             ai_play_improved_a_star_hamiltonian()
                         else:
@@ -392,10 +392,10 @@ def options():
     # AI Algorithm Selection Buttons
     simple_button = button_rect(
         "SIMPLE", (225, (SCREEN_HEIGHT/4)+107), 25, GREY, BLACK)
-    pertubated_button = button_rect(
-        "PERTUBATED", (350, (SCREEN_HEIGHT/4)+107), 20, GREY, BLACK)
-    improved_a_star_button = button_rect(
-        "IMPROVED", (475, (SCREEN_HEIGHT/4)+107), 25, GREY, BLACK)
+    improved_button = button_rect(
+        "IMPROVED", (350, (SCREEN_HEIGHT/4)+107), 20, GREY, BLACK)
+    a_star_risk_button = button_rect(
+        "RISK", (475, (SCREEN_HEIGHT/4)+107), 25, GREY, BLACK)
 
     # Speed Buttons
     slow_speed_button = button_rect(
@@ -425,16 +425,16 @@ def options():
         # ALGORITHM
         if AI_PLAY == "SIMPLE":
             simple_button.set_text("SIMPLE", DARK_GREY, GREY)
-            pertubated_button.set_text("PERTUBATED", GREY, BLACK)
-            improved_a_star_button.set_text("IMPROVED", GREY, BLACK)
-        elif AI_PLAY == "PERTUBATED":
-            simple_button.set_text("SIMPLE", GREY, BLACK)
-            pertubated_button.set_text("PERTUBATED", DARK_GREY, GREY)
-            improved_a_star_button.set_text("IMPROVED", GREY, BLACK)
+            improved_button.set_text("IMPROVED", GREY, BLACK)
+            a_star_risk_button.set_text("RISK", GREY, BLACK)
         elif AI_PLAY == "IMPROVED":
             simple_button.set_text("SIMPLE", GREY, BLACK)
-            pertubated_button.set_text("PERTUBATED", GREY, BLACK)
-            improved_a_star_button.set_text("IMPROVED", DARK_GREY, GREY)
+            improved_button.set_text("IMPROVED", DARK_GREY, GREY)
+            a_star_risk_button.set_text("RISK", GREY, BLACK)
+        elif AI_PLAY == "RISK":
+            simple_button.set_text("SIMPLE", GREY, BLACK)
+            improved_button.set_text("IMPROVED", GREY, BLACK)
+            a_star_risk_button.set_text("RISK", DARK_GREY, GREY)
         # SPEED
         if SPEED == "SLOW":
             slow_speed_button.set_text("SLOW", DARK_GREY, GREY)
@@ -469,8 +469,8 @@ def options():
 
             # Algorithm Button Clicked
             simple_button.click(event, "ALGORITHM", "SIMPLE")
-            pertubated_button.click(event, "ALGORITHM", "PERTUBATED")
-            improved_a_star_button.click(event, "ALGORITHM", "IMPROVED")
+            improved_button.click(event, "ALGORITHM", "IMPROVED")
+            a_star_risk_button.click(event, "ALGORITHM", "RISK")
 
             # Speed Button Clicked
             slow_speed_button.click(event, "SPEED", "SLOW")
@@ -519,8 +519,8 @@ def options():
 
         # Show AI Algorithm Selection Buttons
         simple_button.show()
-        pertubated_button.show()
-        improved_a_star_button.show()
+        improved_button.show()
+        a_star_risk_button.show()
 
         # Show Speed Buttons
         slow_speed_button.show()
@@ -709,8 +709,8 @@ def ai_play_simple_hamiltonian():
         clock.tick(SNAKE_SPEED)
 
 
-# Pertubated Hamiltonian AI Play (PERFECT)
-def ai_play_pertubated_hamiltonian():
+# Improved Hamiltonian AI Play (PERFECT)
+def ai_play_improved_hamiltonian():
     # Initialise the maze and the path the snake is going to follow
     maze_object = maze(GRID_HEIGHT/2, GRID_WIDTH/2)
     prim_maze = maze_object.generate_prim_maze()
@@ -718,7 +718,7 @@ def ai_play_pertubated_hamiltonian():
     maze_path = path_object.generate_path(prim_maze)
 
     # Initialise game class for AI Play
-    ai_play_game = game("AI PLAY - PERTUBATED HAMILTONIAN")
+    ai_play_game = game("AI PLAY - IMPROVED HAMILTONIAN")
 
     # Get the initial position of the snake
     snake_position = (
