@@ -56,6 +56,7 @@ def testing_cycle():
         data.append(row)
 
         count += 1
+        print("Count is: " + str(count))
 
     filename = ("testing_data/snake_testing_" +
                 test + "_" + difficulty + ".csv")
