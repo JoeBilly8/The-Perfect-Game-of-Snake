@@ -9,15 +9,14 @@ from snake_ai_functions.prim_maze import maze
 from snake_ai_functions.generate_path import path
 from snake_helper_functions.helper import *
 from snake_settings import *
-from snake_main import ai_play_a_star_risk, ai_play_improved_hamiltonian, snake
-from snake_main import apple
+from snake_main import snake, apple
 
 # Initialise Pygame
 pygame.init()
 
 # Setup Screen
 WINDOW = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption("The Perfect Game Of Snake TESTING LOOP")
+pygame.display.set_caption("The Perfect Game Of Snake TESTING CYCLE")
 
 # Set for breaking out of a game at game over to start the loop over again
 game_running = True
@@ -652,3 +651,4 @@ def ai_play_a_star_risk():
 
 print("Beginning Test Cycle")
 testing_cycle()
+print("Testing Cycle Complete")

@@ -46,6 +46,8 @@ apple_eaten_sound = pygame.mixer.Sound("sounds/Eat_Sound.wav")
 background_music = pygame.mixer.Sound("sounds/Background_Music.mp3")
 menu_music = pygame.mixer.Sound("sounds/Menu_Music.wav")
 mouse_click_sound = pygame.mixer.Sound("sounds/Mouse_Click.wav")
+game_won_sound = pygame.mixer.Sound("sounds/Game_Won_Sound.wav")
+game_lost_sound = pygame.mixer.Sound("sounds/Game_Lost_Sound.wav")
 
 
 #---------------------LOAD IMAGES---------------------#
@@ -116,7 +118,6 @@ class apple(object):
         for pos in snake_body:
             if self.x == pos[0] and self.y == pos[1]:
                 # Apple is within snake body so randomise again
-                print("Apple is within snake body, rerandomising")
                 self.randomise_pos(snake_body)
         self.position = [self.x, self.y]
 
@@ -165,31 +166,40 @@ class game(object):
                 print("MOVES: " + str(self.moves))
                 print("TIME TAKEN: " +
                       str(int(self.end_time-self.start_time)) + " seconds")
-                main_menu()
+                game_won_sound.play()
+                self.game_over_screen("WON")
+
+    def display_dead_snake(self, screen=WINDOW):
+        clock = pygame.time.Clock()
+        for pos in self.snake.positions:
+            snake_block = pygame.Rect(
+                (pos[0]*(GRID_SIZE)), (pos[1]*(GRID_SIZE)), GRID_SIZE, GRID_SIZE)
+            if pos == self.snake.positions[0]:
+                screen.blit(snake_head_dead_image, snake_block)
+            pygame.display.update()
+            clock.tick(1)
 
     def check_for_game_over(self, screen=WINDOW):
-        clock = pygame.time.Clock()
         # If the snake hits itself - game over
         for pos in self.snake.positions[1:]:
             if self.snake.positions[0][0] == pos[0] and self.snake.positions[0][1] == pos[1]:
                 print("GAME OVER BY SNAKE")
                 self.outcome = "LOSE"
-                for pos in self.snake.positions:
-                    snake_block = pygame.Rect(
-                        (pos[0]*(GRID_SIZE)), (pos[1]*(GRID_SIZE)), GRID_SIZE, GRID_SIZE)
-                    if pos == self.snake.positions[0]:
-                        screen.blit(snake_head_dead_image, snake_block)
-                pygame.display.update()
-                clock.tick(.1)
+                self.display_dead_snake()
                 print("SCORE: " + str(self.game_score))
                 print("MOVES: " + str(self.moves))
-                main_menu()
+                self.end_time = time.time()
+                game_lost_sound.play()
+                self.game_over_screen("LOST")
         # If the snake hits the edge of a border - game over
         if not (0 <= self.snake.positions[0][0] < GRID_WIDTH) or not (0 <= self.snake.positions[0][1] < GRID_HEIGHT):
             print("GAME OVER BY BORDER")
             self.outcome = "LOSE"
-            main_menu()
+            self.end_time = time.time()
+            game_lost_sound.play()
+            self.game_over_screen("LOST")
 
+    # Use create_text for this?
     def display_score(self, screen=WINDOW):
         roboto_font = pygame.font.Font("fonts/RobotoCondensed-Bold.ttf", 20)
         score = roboto_font.render(
@@ -197,6 +207,7 @@ class game(object):
         score_rect = score.get_rect(center=(45, 20))
         screen.blit(score, score_rect)
 
+    # Use create_text for this?
     def display_moves(self, screen=WINDOW):
         roboto_font = pygame.font.Font("fonts/RobotoCondensed-Bold.ttf", 20)
         score = roboto_font.render(
@@ -204,6 +215,7 @@ class game(object):
         score_rect = score.get_rect(center=(47.5, 40))
         screen.blit(score, score_rect)
 
+    # Use create_text for this?
     def display_game_label(self, screen=WINDOW):
         roboto_font = pygame.font.Font("fonts/RobotoCondensed-Bold.ttf", 20)
         game_label = roboto_font.render(str(self.game_label), 1, GREY)
@@ -213,6 +225,41 @@ class game(object):
         game_label_rect = game_label.get_rect(
             center=((GRID_SIZE*GRID_WIDTH)-(offset), 20))
         screen.blit(game_label, game_label_rect)
+
+    def game_over_screen(self, outcome, screen=WINDOW):
+        background_music.stop()
+        clock = pygame.time.Clock()
+        fill_screen(screen, GREEN)
+
+        # Game over title
+        game_over_label, game_over_label_rect = create_text(
+            "GAME OVER", 40, SCREEN_WIDTH/2, (SCREEN_HEIGHT/2)-15)
+        screen.blit(game_over_label, game_over_label_rect)
+
+        # Outcome
+        outcome_label, outcome_label_rect = create_text(
+            str("SNAKE HAS " + outcome), 20, SCREEN_WIDTH/2, (SCREEN_HEIGHT/2)+25)
+        screen.blit(outcome_label, outcome_label_rect)
+
+        # Score
+        score_label, score_label_rect = create_text(
+            str("SCORE: " + str(self.game_score)), 20, SCREEN_WIDTH/2, (SCREEN_HEIGHT/2)+50)
+        screen.blit(score_label, score_label_rect)
+
+        # Moves
+        moves_label, moves_label_rect = create_text(
+            str("MOVES: " + str(self.moves)), 20, SCREEN_WIDTH/2, (SCREEN_HEIGHT/2)+75)
+        screen.blit(moves_label, moves_label_rect)
+
+        # Time Taken
+        time_label, time_label_rect = create_text(
+            str("TIME TAKEN: " + str(int(self.end_time-self.start_time)) + " SECONDS"), 20, SCREEN_WIDTH/2, (SCREEN_HEIGHT/2)+100)
+        screen.blit(time_label, time_label_rect)
+
+        # Update Display, pause for reading, then return to the main menu
+        pygame.display.update()
+        clock.tick(.1)
+        main_menu()
 
 
 class button_rect(object):
@@ -293,9 +340,6 @@ def main_menu():
             # Check for mouse clicking
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
-                    print("Difficulty is: " + DIFFICULTY)
-                    print("AI PLAY is: " + AI_PLAY)
-                    print("Speed is: " + SPEED)
                     if manual_play_text_rect.collidepoint(event.pos):
                         print("MANUAL PLAY PRESSED")
                         manual_play()
@@ -602,9 +646,6 @@ def manual_play():
         # Half the speed for manual play to make it actually playable
         clock.tick(SNAKE_SPEED/2)
 
-
-# Testing cycle function - runs a chosen algorithm on a loop, recording the stats for each game
-def testing_cycle():
     # Set the number of cycles we want to run
     cycles = 100
     count = 0

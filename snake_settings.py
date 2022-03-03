@@ -1,4 +1,4 @@
-# Use this file to change the settings of the snake game (can also be done via the options menu in-game)
+# Use this file to change the starting settings of the snake game (ai/difficulty/speed can also be done via the options menu in-game)
 
 # Settings
 AI_PLAY = "SIMPLE"  # SIMPLE, IMPROVED, RISK
