@@ -9,9 +9,8 @@ GREY = pygame.Color("#D3D3D3")
 def fill_screen(screen, colour):
     screen.fill(colour)
 
-# Draws a grassy grid on the screen
 
-
+# Draws a "grassy" grid on the screen by alternating light and darker green shades in each grid
 def draw_grid(screen, grid_columns, grid_rows, grid_size):
     # Fill window with light green to start with (for light green squares)
     screen.fill((LIGHT_GREEN))
