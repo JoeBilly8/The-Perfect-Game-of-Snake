@@ -1,7 +1,6 @@
+# Path Class: Generates a path for a grid given a randomly generated prims maze of size (grid_columns/2), (grid_rows/2)
+# Works on the basis that we can follow a prim maze of half the size while always keeping the maze to our right to create a randomly generated hamiltonian cycle
 class path(object):
-    #### CLASS: PATH ####
-    #### Description: Generates a path for a grid given a randomly generated prims maze of size (grid_columns/2), (grid_rows/2) ####
-
     # Define the direction change in a nested dictionary
     direction_change_definitions = {'NORTH': {'right': 'EAST', 'left': 'WEST'}, 'EAST': {'right': 'SOUTH', 'left': 'NORTH'}, 'SOUTH': {'right': 'WEST', 'left': 'EAST'}, 'WEST': {
         'right': 'NORTH', 'left': 'SOUTH'}}
@@ -14,18 +13,21 @@ class path(object):
         self.grid_columns = grid_columns
         self.grid_rows = grid_rows
 
+    # If we don't have a wall or an edge to our right, we can turn right
     def can_go_right(self, maze, direction, cell, node, grid_columns, grid_rows):
         if not self.is_wall_right(maze, direction, cell, node) and not self.is_edge_right(grid_columns, grid_rows, direction, node):
             return True
         else:
             return False
 
+    # If we don't have a wall or an edge in front of us, we can go forward
     def can_go_forward(self, maze, direction, cell, node, grid_columns, grid_rows):
         if not self.is_wall_infront(maze, direction, cell, node) and not self.is_edge_infront(grid_columns, grid_rows, direction, node):
             return True
         else:
             return False
 
+    # Cross reference the direction we're going with our current position to check if there's a wall to our right
     def is_wall_right(self, maze, direction, cell, node):
         # Retrieve maze infomation about the cell
         for i in maze:
@@ -104,13 +106,14 @@ class path(object):
 
         return is_wall_right
 
+    # Cross reference the direction we're going with our current position to check if there's a wall infront of us
     def is_wall_infront(self, maze, direction, cell, node):
         # Retrieve maze infomation about the cell
         for i in maze:
             if i[0] == cell:
                 cell_info = i
 
-        # Retrieve where the node is in the cell is
+        # Retrieve where the node is in the cell
         if node[0] % 2 == 0 and node[1] % 2 == 0:
             node_value = "top_left"
         elif node[0] % 2 == 1 and node[1] % 2 == 0:
@@ -182,6 +185,7 @@ class path(object):
 
         return is_wall_infront
 
+    # Cross reference the direction we're going with our current position to check if there's a edge to our right
     def is_edge_right(self, grid_columns, grid_rows, direction, node):
         # Retrieve where the node is in the cell is
         if node[0] % 2 == 0 and node[1] % 2 == 0:
@@ -255,6 +259,7 @@ class path(object):
 
         return is_edge_right
 
+    # Cross reference the direction we're going with our current position to check if there's a edge infront of us
     def is_edge_infront(self, grid_columns, grid_rows, direction, node):
         # Retrieve where the node is in the cell is
         if node[0] % 2 == 0 and node[1] % 2 == 0:

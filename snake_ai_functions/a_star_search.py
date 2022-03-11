@@ -1,6 +1,7 @@
 import heapq
 
 
+# Node class for use in the A Star Search
 class a_star_node(object):
     def __init__(self, position, parent=None):
         self.g = 0
@@ -15,11 +16,11 @@ class a_star_node(object):
     def __repr__(self):
         return f"{self.position} - g: {self.g} h: {self.h} f: {self.f}"
 
-    # defining less than for purposes of heap queue
+    # Defining less than for purposes of heap queue
     def __lt__(self, other):
         return self.f < other.f
 
-    # defining greater than for purposes of heap queue
+    # Defining greater than for purposes of heap queue
     def __gt__(self, other):
         return self.f > other.f
 
@@ -51,7 +52,6 @@ def a_star_path(start, target, grid_columns, grid_rows, snake_positions):
 
         # If we've reached our target, return the path
         if current_node == target:
-            print("FOUND A PATH")
             path = []
             current = current_node
             while current is not None:
@@ -102,5 +102,5 @@ def a_star_path(start, target, grid_columns, grid_rows, snake_positions):
             # Otherwise add the child to the node open list
             heapq.heappush(node_open_list, child)
 
-    print("Couldn't find a path")
+    # If we can't find a path, return None
     return None

@@ -1,6 +1,7 @@
+# Function for finding all the adjacent nodes from the head of the snake
+# Discard any nodes past the edge of the grid or ones that are in the snake body
 def find_adjacent_nodes(node, grid_rows, grid_columns, snake_positions):
     adjacent_nodes = []
-    # print("NODE IS: " + str(node))
     # Adjacent squares in the context of the snake game
     adjacent_positions = [(0, -1), (0, 1), (-1, 0), (1, 0)]
     for new_position in adjacent_positions:

@@ -21,8 +21,9 @@ pygame.display.set_caption("The Perfect Game Of Snake TESTING CYCLE")
 # Set for breaking out of a game at game over to start the loop over again
 game_running = True
 
-
 # Testing cycle function - runs a chosen algorithm on a loop, recording the stats for each game
+
+
 def testing_cycle():
     # Set the number of cycles we want to run
     test = AI_PLAY

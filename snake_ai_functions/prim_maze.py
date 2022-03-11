@@ -1,5 +1,7 @@
 import random
 
+# Maze Class: Generates a Prim's maze using prim's algorithm, which is then passed to the Path class to generate a hamiltonian path.
+
 
 class maze(object):
     def __init__(self, grid_rows, grid_columns):

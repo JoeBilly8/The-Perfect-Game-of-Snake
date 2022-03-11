@@ -9,6 +9,8 @@ GREY = pygame.Color("#D3D3D3")
 def fill_screen(screen, colour):
     screen.fill(colour)
 
+# Draws a grassy grid on the screen
+
 
 def draw_grid(screen, grid_columns, grid_rows, grid_size):
     # Fill window with light green to start with (for light green squares)
@@ -29,6 +31,7 @@ def draw_grid(screen, grid_columns, grid_rows, grid_size):
                     pygame.draw.rect(screen, GREEN, grid_rect)
 
 
+# Generic text rendering function
 def create_text(text_to_write, font_size, x, y, colour=GREY):
     # Define Roboto Font
     roboto_font = pygame.font.Font("fonts/RobotoCondensed-Bold.ttf", font_size)
