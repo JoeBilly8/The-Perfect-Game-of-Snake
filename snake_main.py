@@ -336,25 +336,29 @@ def main_menu():
             # Check for mouse clicking
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
-                    if manual_play_text_rect.collidepoint(event.pos):
-                        print("MANUAL PLAY PRESSED")
-                        manual_play()
-                    if ai_play_text_rect.collidepoint(event.pos):
-                        print("AI PLAY PRESSED")
-                        if AI_PLAY == "SIMPLE":
-                            ai_play_simple_hamiltonian()
-                        elif AI_PLAY == "IMPROVED":
-                            ai_play_improved_hamiltonian()
-                        elif AI_PLAY == "RISK":
-                            ai_play_a_star_risk()
-                        else:
-                            print("Error, setting not selected")
-                    if options_text_rect.collidepoint(event.pos):
-                        print("OPTIONS BUTTON PRESSED")
-                        options()
-                    if more_info_text_rect.collidepoint(event.pos):
-                        print("MORE INFO BUTTON PRESSED")
-                        more_info()
+                    try:
+                        if manual_play_text_rect.collidepoint(event.pos):
+                            print("MANUAL PLAY PRESSED")
+                            manual_play()
+                        if ai_play_text_rect.collidepoint(event.pos):
+                            print("AI PLAY PRESSED")
+                            if AI_PLAY == "SIMPLE":
+                                ai_play_simple_hamiltonian()
+                            elif AI_PLAY == "IMPROVED":
+                                ai_play_improved_hamiltonian()
+                            elif AI_PLAY == "RISK":
+                                ai_play_a_star_risk()
+                            else:
+                                print("Error, setting not selected")
+                        if options_text_rect.collidepoint(event.pos):
+                            print("OPTIONS BUTTON PRESSED")
+                            options()
+                        if more_info_text_rect.collidepoint(event.pos):
+                            print("MORE INFO BUTTON PRESSED")
+                            more_info()
+                    except:
+                        print("Buttons haven't loaded yet...")
+                        pass
 
         # Fill Background
         fill_screen(WINDOW, GREEN)
