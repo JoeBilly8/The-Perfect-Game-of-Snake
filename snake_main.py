@@ -251,7 +251,7 @@ class game(object):
 
         # Update Display, pause for reading, then return to the main menu
         pygame.display.update()
-        clock.tick(.1)
+        clock.tick(.15)
         main_menu()
 
 
