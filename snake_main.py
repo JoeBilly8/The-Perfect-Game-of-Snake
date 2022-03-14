@@ -5,7 +5,6 @@
 
 #-----------------------IMPORTS-----------------------#
 from snake_settings import *
-import csv
 import time
 import pygame
 import sys
