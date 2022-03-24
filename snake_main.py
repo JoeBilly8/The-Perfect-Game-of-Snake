@@ -1,7 +1,5 @@
 # NOTES:
 # TO DO:
-# 1) Unit Tests
-# 2) Go through and descriptively comment code (particularly AI functions)
 
 #-----------------------IMPORTS-----------------------#
 from snake_settings import *
