@@ -1,7 +1,6 @@
 # FULL DISCLOSURE: I used the following articles pseudocode/code https://medium.com/@nicholas.w.swift/easy-a-star-pathfinding-7e6689c7f7b2
 # As well as the following github gist: https://gist.github.com/ryancollingwood/32446307e976a11a1185a5394d6657bc
 # For the ideas to implement the A* algorithm into my code
-# No point in reinventing the wheel!
 
 import heapq
 

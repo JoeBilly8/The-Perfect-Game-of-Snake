@@ -1,8 +1,7 @@
 import random
 
+
 # Maze Class: Generates a Prim's maze using prim's algorithm, which is then passed to the Path class to generate a hamiltonian path.
-
-
 class maze(object):
     def __init__(self, grid_rows, grid_columns):
         # Define rows/columns from the width/height - easier to mentally picture
@@ -88,11 +87,11 @@ class maze(object):
             cell_neighbour = neighbours_list[random.randint(
                 0, len(neighbours_list)-1)]
 
-            # If the neighbour is unvisitied then create a "wall" between the neighbour and the cell we're looking at
+            # If the neighbour is unvisited then create a "wall" between the neighbour and the cell we're looking at
             if cell_neighbour not in cells_visited:
                 cells_visited.append(cell_neighbour)
 
-                # If the neighbour cell has a cell visited to it's left then then (cellx, celly): "wall_left"
+                # If the neighbour cell has a cell visited to it's left then (cellx, celly): "wall_left"
                 if((cell_neighbour[0]-1, cell_neighbour[1]) in cells_visited):
                     connection_cell = (cell_neighbour[0]-1, cell_neighbour[1])
                     for i in maze_list:
@@ -122,7 +121,7 @@ class maze(object):
                     # Append neighbour cell wall entrance information to maze list for cell neighbour
                     maze_list.append([cell_neighbour, "right"])
 
-                # If the neighbour cell has a cell visitied below it then (cellx, celly): "wall_below"
+                # If the neighbour cell has a cell visited below it then (cellx, celly): "wall_below"
                 elif((cell_neighbour[0], cell_neighbour[1]+1) in cells_visited):
                     connection_cell = (cell_neighbour[0], cell_neighbour[1]+1)
                     for i in maze_list:

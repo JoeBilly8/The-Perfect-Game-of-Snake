@@ -34,7 +34,7 @@ class path(object):
             if i[0] == cell:
                 cell_info = i
 
-        # Retrieve where the node is in the cell is
+        # Retrieve where the node is in the cell
         if node[0] % 2 == 0 and node[1] % 2 == 0:
             node_value = "top_left"
         elif node[0] % 2 == 1 and node[1] % 2 == 0:
@@ -259,7 +259,7 @@ class path(object):
 
         return is_edge_right
 
-    # Cross reference the direction we're going with our current position to check if there's a edge infront of us
+    # Cross reference the direction we're going with our current position to check if there's an edge infront of us
     def is_edge_infront(self, grid_columns, grid_rows, direction, node):
         # Retrieve where the node is in the cell is
         if node[0] % 2 == 0 and node[1] % 2 == 0:

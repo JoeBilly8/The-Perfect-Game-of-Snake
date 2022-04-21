@@ -37,11 +37,23 @@ pygame.display.set_caption("The (not quite) Perfect Game Of Snake")
 #-----------------------/\ INITIALISATION /\-----------------------#
 
 #---------------------LOAD SOUNDS---------------------#
-apple_eaten_sound = pygame.mixer.Sound("sounds/Eat_Sound.wav")
+# All sounds used were royalty free, the following are the links as an acreditation to the authors:
+# https://freemusicarchive.org/music/Voodoo_Suite
 background_music = pygame.mixer.Sound("sounds/Background_Music.mp3")
+
+# https://mixkit.co/free-sound-effects/forest/
 menu_music = pygame.mixer.Sound("sounds/Menu_Music.wav")
+
+# https://www.storyblocks.com/audio/stock/potato-chips-crunch-eating-3-sfkbvefladuk8umg5js.html
+apple_eaten_sound = pygame.mixer.Sound("sounds/Eat_Sound.wav")
+
+# https://www.storyblocks.com/audio/stock/mouse-click-computer-hgu7a4t2ivrk0wxxi7h.html
 mouse_click_sound = pygame.mixer.Sound("sounds/Mouse_Click.wav")
+
+# https://mixkit.co/free-sound-effects/game/
 game_won_sound = pygame.mixer.Sound("sounds/Game_Won_Sound.wav")
+
+# https://mixkit.co/free-sound-effects/game/
 game_lost_sound = pygame.mixer.Sound("sounds/Game_Lost_Sound.wav")
 
 
@@ -177,7 +189,7 @@ class game(object):
             if pos == self.snake.positions[0]:
                 screen.blit(snake_head_dead_image, snake_block)
             pygame.display.update()
-            clock.tick(1)
+            clock.tick(500)
 
     def check_for_game_over(self, screen=WINDOW):
         # If the snake hits itself - game over
