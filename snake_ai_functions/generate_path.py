@@ -15,14 +15,14 @@ class path(object):
 
     # If we don't have a wall or an edge to our right, we can turn right
     def can_go_right(self, maze, direction, cell, node, grid_columns, grid_rows):
-        if not self.is_wall_right(maze, direction, cell, node) and not self.is_edge_right(grid_columns, grid_rows, direction, node):
+        if not self.is_wall_right(maze, direction, cell, node) and not self.is_edge_right(grid_columns, grid_rows, direction, node, cell):
             return True
         else:
             return False
 
     # If we don't have a wall or an edge in front of us, we can go forward
     def can_go_forward(self, maze, direction, cell, node, grid_columns, grid_rows):
-        if not self.is_wall_infront(maze, direction, cell, node) and not self.is_edge_infront(grid_columns, grid_rows, direction, node):
+        if not self.is_wall_infront(maze, direction, cell, node) and not self.is_edge_infront(grid_columns, grid_rows, direction, node, cell):
             return True
         else:
             return False
@@ -186,8 +186,8 @@ class path(object):
         return is_wall_infront
 
     # Cross reference the direction we're going with our current position to check if there's a edge to our right
-    def is_edge_right(self, grid_columns, grid_rows, direction, node):
-        # Retrieve where the node is in the cell is
+    def is_edge_right(self, grid_columns, grid_rows, direction, node, cell):
+        # Retrieve where the node is in the cell
         if node[0] % 2 == 0 and node[1] % 2 == 0:
             node_value = "top_left"
         elif node[0] % 2 == 1 and node[1] % 2 == 0:
@@ -199,13 +199,13 @@ class path(object):
 
         if direction == "NORTH":
             if node_value == "bottom_right":
-                if node[0] == (grid_columns-1):
+                if cell[0] == (grid_columns-1):
                     is_edge_right = True
                 else:
                     is_edge_right = False
 
             elif node_value == "top_right":
-                if node[0] == (grid_columns-1):
+                if cell[0] == (grid_columns-1):
                     is_edge_right = True
                 else:
                     is_edge_right = False
@@ -214,13 +214,13 @@ class path(object):
 
         elif direction == "SOUTH":
             if node_value == "top_left":
-                if node[0] == 0:
+                if cell[0] == 0:
                     is_edge_right = True
                 else:
                     is_edge_right = False
 
             elif node_value == "bottom_left":
-                if node[0] == 0:
+                if cell[0] == 0:
                     is_edge_right = True
                 else:
                     is_edge_right = False
@@ -229,13 +229,13 @@ class path(object):
 
         if direction == "EAST":
             if node_value == "bottom_left":
-                if node[1] == (grid_rows-1):
+                if cell[1] == (grid_rows-1):
                     is_edge_right = True
                 else:
                     is_edge_right = False
 
             elif node_value == "bottom_right":
-                if node[1] == (grid_rows-1):
+                if cell[1] == (grid_rows-1):
                     is_edge_right = True
                 else:
                     is_edge_right = False
@@ -244,13 +244,13 @@ class path(object):
 
         if direction == "WEST":
             if node_value == "top_left":
-                if node[1] == 0:
+                if cell[1] == 0:
                     is_edge_right = True
                 else:
                     is_edge_right = False
 
             elif node_value == "top_right":
-                if node[1] == 0:
+                if cell[1] == 0:
                     is_edge_right = True
                 else:
                     is_edge_right = False
@@ -260,8 +260,8 @@ class path(object):
         return is_edge_right
 
     # Cross reference the direction we're going with our current position to check if there's an edge infront of us
-    def is_edge_infront(self, grid_columns, grid_rows, direction, node):
-        # Retrieve where the node is in the cell is
+    def is_edge_infront(self, grid_columns, grid_rows, direction, node, cell):
+        # Retrieve where the node is in the cell
         if node[0] % 2 == 0 and node[1] % 2 == 0:
             node_value = "top_left"
         elif node[0] % 2 == 1 and node[1] % 2 == 0:
@@ -273,13 +273,13 @@ class path(object):
 
         if direction == "NORTH":
             if node_value == "top_left":
-                if node[1] == 0:
+                if cell[1] == 0:
                     is_edge_infront = True
                 else:
                     is_edge_infront = False
 
             elif node_value == "top_right":
-                if node[1] == 0:
+                if cell[1] == 0:
                     is_edge_infront = True
                 else:
                     is_edge_infront = False
@@ -288,13 +288,13 @@ class path(object):
 
         elif direction == "SOUTH":
             if node_value == "bottom_left":
-                if node[1] == (grid_rows-1):
+                if cell[1] == (grid_rows-1):
                     is_edge_infront = True
                 else:
                     is_edge_infront = False
 
             elif node_value == "bottom_right":
-                if node[1] == (grid_rows-1):
+                if cell[1] == (grid_rows-1):
                     is_edge_infront = True
                 else:
                     is_edge_infront = False
@@ -303,13 +303,13 @@ class path(object):
 
         if direction == "EAST":
             if node_value == "top_right":
-                if node[0] == (grid_columns-1):
+                if cell[0] == (grid_columns-1):
                     is_edge_infront = True
                 else:
                     is_edge_infront = False
 
             elif node_value == "bottom_right":
-                if node[0] == (grid_columns-1):
+                if cell[0] == (grid_columns-1):
                     is_edge_infront = True
                 else:
                     is_edge_infront = False
@@ -318,13 +318,13 @@ class path(object):
 
         if direction == "WEST":
             if node_value == "top_left":
-                if node[0] == (grid_columns-1):
+                if cell[0] == 0:
                     is_edge_infront = True
                 else:
                     is_edge_infront = False
 
             elif node_value == "bottom_left":
-                if node[0] == (grid_columns-1):
+                if cell[0] == 0:
                     is_edge_infront = True
                 else:
                     is_edge_infront = False

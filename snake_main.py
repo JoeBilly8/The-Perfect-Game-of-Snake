@@ -1,6 +1,3 @@
-# NOTES:
-# TO DO:
-
 #-----------------------IMPORTS-----------------------#
 from snake_settings import *
 import time

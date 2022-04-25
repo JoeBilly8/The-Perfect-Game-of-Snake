@@ -43,7 +43,7 @@ def a_star_path(start, target, grid_columns, grid_rows, snake_positions):
     heapq.heappush(node_open_list, start_node)
 
     # Set a limit on the path_finding - if we reach this then break out and don't return a path
-    max_iterations = (grid_rows*grid_columns)
+    max_iterations = (grid_rows*grid_columns)+25
     iteration_number = 0
 
     # Loop until you find the end
