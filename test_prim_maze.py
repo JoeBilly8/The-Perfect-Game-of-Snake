@@ -52,7 +52,6 @@ class TestPrimMaze(unittest.TestCase):
     # Checking that the values are within the expected range
     def test_generate_prim_maze(self):
         generated_maze = self.test_maze.generate_prim_maze()
-        print(generated_maze)
 
         # Ensure length of maze is correct
         self.assertEqual(len(generated_maze), 9)
