@@ -12,4 +12,4 @@
 
 * Note: You will need python 3.9 and pygame installed to run this project.
 
-* Please reach out to "Joe Moore" (sgjmoor4@liverpool.ac.uk) if you need any further help running the game.
+* Please reach out to "Joe Moore" (joebilly8@hotmail.co.uk) if you need any further help running the game.
